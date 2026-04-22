@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fan Club</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#f7f7fb]">
+
+<div id="app" class="p-10 text-center">
+  <h1 class="text-4xl font-black">FAN CLUB</h1>
+  <p class="mt-4 text-gray-500">デモ版（兄弟確認用）</p>
+
+  <div class="mt-10 bg-black text-white p-8 rounded-3xl inline-block">
+    <div class="text-2xl">Digital Member Card</div>
+    <div class="mt-4 text-3xl font-bold">Your Name</div>
+    <div class="mt-2 text-xl">No.000001</div>
+  </div>
+
+  <button onclick="register()" class="mt-10 px-6 py-3 bg-purple-500 text-white rounded-full">
+    新規登録
+  </button>
+</div>
+
+<script>
+let count = localStorage.getItem("count") || 1;
+
+function register(){
+  alert("登録完了！会員番号：" + count);
+  count++;
+  localStorage.setItem("count", count);
+}
+</script>
+
+</body>
+</html>
