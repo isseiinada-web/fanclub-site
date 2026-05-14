@@ -1,539 +1,1131 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fan Club Demo</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-[#f7f7fb] text-slate-900">
-  <div id="app"></div>
+import { useEffect, useMemo, useState } from "react";
+import { initializeApp, getApp, getApps } from "firebase/app";
+import {
+  createUserWithEmailAndPassword,
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  getFirestore,
+  runTransaction,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
 
-  <script>
-    const STORAGE_KEY = "fan-club-demo-profile";
-    const AUTH_KEY = "fan-club-demo-auth";
-    const MEMBER_COUNTER_KEY = "fan-club-demo-member-counter";
-    const USERS_KEY = "fan-club-demo-users";
+const firebaseConfig = {
+  apiKey: "AIzaSyA43kfNncTrEKhedVSunTReZQvPzMTkHj0",
+  authDomain: "brothers-fanclub.firebaseapp.com",
+  projectId: "brothers-fanclub",
+  storageBucket: "brothers-fanclub.firebasestorage.app",
+  messagingSenderId: "818864836252",
+  appId: "1:818864836252:web:a5fe021cb0a97c6877e759",
+  measurementId: "G-KBM70KG1DH",
+};
 
-    const routes = {
-      login: "login",
-      register: "register",
-      card: "card",
-      profile: "profile",
-      status: "status",
-      notices: "notices",
-      sns: "sns",
-      notifications: "notifications",
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const ROUTES = {
+  login: "#/login",
+  register: "#/register",
+  card: "#/card",
+  profile: "#/profile",
+  status: "#/status",
+  notices: "#/notices",
+  sns: "#/sns",
+  notifications: "#/notifications",
+};
+
+const ROUTE_TO_PAGE = {
+  [ROUTES.login]: "login",
+  [ROUTES.register]: "register",
+  [ROUTES.card]: "digital-card",
+  [ROUTES.profile]: "profile",
+  [ROUTES.status]: "status",
+  [ROUTES.notices]: "notices",
+  [ROUTES.sns]: "sns",
+  [ROUTES.notifications]: "notifications",
+};
+
+const EMPTY_PROFILE = {
+  uid: "",
+  nickname: "",
+  email: "",
+  bio: "よろしくお願いします。",
+  memberNumber: 1,
+  joinedAt: new Date().toISOString().slice(0, 10),
+};
+
+function getPageFromHash() {
+  if (typeof window === "undefined") return "login";
+  return ROUTE_TO_PAGE[window.location.hash] || "login";
+}
+
+function formatMemberNumber(num) {
+  return `No.${String(num).padStart(6, "0")}`;
+}
+
+function isValidEmail(email) {
+  const value = email.trim();
+  if (!value || value.includes(" ")) return false;
+  const parts = value.split("@");
+  if (parts.length !== 2) return false;
+  const [local, domain] = parts;
+  if (!local || !domain) return false;
+  if (!domain.includes(".")) return false;
+  if (domain.startsWith(".") || domain.endsWith(".")) return false;
+  return true;
+}
+
+function calculateStatus(joinedAt) {
+  const joinDate = new Date(`${joinedAt}T00:00:00`);
+  const now = new Date();
+
+  const totalDays = Math.max(
+    0,
+    Math.floor((now.getTime() - joinDate.getTime()) / 86400000)
+  );
+
+  let years = now.getFullYear() - joinDate.getFullYear();
+  let months = now.getMonth() - joinDate.getMonth();
+  let days = now.getDate() - joinDate.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    const prevMonthLastDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      0
+    ).getDate();
+    days += prevMonthLastDate;
+  }
+
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  const monthsSinceJoin = Math.max(0, years * 12 + months);
+
+  const milestones = [
+    { key: "villager", jp: "村人", months: 0 },
+    { key: "apprentice", jp: "見習い", months: 3 },
+    { key: "novice", jp: "かけだし", months: 6 },
+    { key: "adventurer", jp: "冒険者", months: 9 },
+    { key: "year1", jp: "1年メンバー", months: 12 },
+    { key: "year2", jp: "2年メンバー", months: 24 },
+    { key: "year3", jp: "古参ファン", months: 36 },
+    { key: "legend", jp: "レジェンド", months: 48 },
+    { key: "legend_plus", jp: "超古参", months: 60 },
+  ];
+
+  let currentRank = milestones[0];
+  let nextRank = null;
+
+  for (let i = 0; i < milestones.length; i += 1) {
+    if (monthsSinceJoin >= milestones[i].months) {
+      currentRank = milestones[i];
+      nextRank = milestones[i + 1] || null;
+    }
+  }
+
+  let nextRankText = "最高ランクです";
+  let progressPercent = 100;
+
+  if (nextRank) {
+    const currentThreshold = currentRank.months;
+    const nextThreshold = nextRank.months;
+    const progress = monthsSinceJoin - currentThreshold;
+    const needed = Math.max(1, nextThreshold - currentThreshold);
+
+    progressPercent = Math.min(
+      100,
+      Math.max(0, Math.round((progress / needed) * 100))
+    );
+
+    const remaining = Math.max(0, nextThreshold - monthsSinceJoin);
+    const remainingYears = Math.floor(remaining / 12);
+    const remainingMonths = remaining % 12;
+
+    if (remainingYears > 0 && remainingMonths > 0) {
+      nextRankText = `あと${remainingYears}年${remainingMonths}ヶ月`;
+    } else if (remainingYears > 0) {
+      nextRankText = `あと${remainingYears}年`;
+    } else if (remainingMonths > 0) {
+      nextRankText = `あと${remainingMonths}ヶ月`;
+    } else {
+      nextRankText = "まもなく到達";
+    }
+  }
+
+  const durationText =
+    years > 0 ? `${years}年${months}ヶ月` : `${months}ヶ月${days}日`;
+
+  return {
+    years,
+    months,
+    days,
+    totalDays,
+    currentRank,
+    nextRank,
+    nextRankText,
+    progressPercent,
+    durationText,
+    yearsLabel: years >= 1 ? `${years}年目` : "1年目",
+  };
+}
+
+function toProfile(user, data) {
+  return {
+    uid: user.uid,
+    nickname: data?.nickname || user.email?.split("@")[0] || "メンバー",
+    email: data?.email || user.email || "",
+    bio: data?.bio || "よろしくお願いします。",
+    memberNumber: Number(data?.memberNumber) || 1,
+    joinedAt: data?.joinedAt || new Date().toISOString().slice(0, 10),
+  };
+}
+
+async function createMemberProfile(user, nickname) {
+  const userRef = doc(db, "users", user.uid);
+  const counterRef = doc(db, "system", "memberCounter");
+  const today = new Date().toISOString().slice(0, 10);
+
+  return runTransaction(db, async (transaction) => {
+    const existingUser = await transaction.get(userRef);
+    if (existingUser.exists()) {
+      return toProfile(user, existingUser.data());
+    }
+
+    const counterSnap = await transaction.get(counterRef);
+    const currentCount = counterSnap.exists()
+      ? Number(counterSnap.data().current || 0)
+      : 0;
+    const nextMemberNumber = currentCount + 1;
+
+    const newProfile = {
+      uid: user.uid,
+      nickname: nickname.trim(),
+      email: user.email,
+      bio: "よろしくお願いします。",
+      memberNumber: nextMemberNumber,
+      joinedAt: today,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
 
-    const state = {
-      page: routes.login,
-      isLoggedIn: false,
-      authMessage: "",
-      saveMessage: "",
-      isEditingProfile: false,
-      loginForm: { email: "", password: "" },
-      registerForm: { nickname: "", email: "", password: "" },
+    transaction.set(counterRef, { current: nextMemberNumber }, { merge: true });
+    transaction.set(userRef, newProfile);
+
+    return {
+      uid: user.uid,
+      nickname: newProfile.nickname,
+      email: newProfile.email,
+      bio: newProfile.bio,
+      memberNumber: newProfile.memberNumber,
+      joinedAt: newProfile.joinedAt,
+    };
+  });
+}
+
+export default function App() {
+  return <FanClubSite />;
+}
+
+function FanClubSite() {
+  const [activePage, setActivePage] = useState(getPageFromHash);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [profile, setProfile] = useState(EMPTY_PROFILE);
+  const [draftProfile, setDraftProfile] = useState(EMPTY_PROFILE);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [registerForm, setRegisterForm] = useState({
+    nickname: "",
+    email: "",
+    password: "",
+  });
+
+  const sectionCardClass =
+    "rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6";
+  const isAuthPage = activePage === "login" || activePage === "register";
+  const memberNumberLabel = formatMemberNumber(profile.memberNumber);
+  const statusInfo = useMemo(
+    () => calculateStatus(profile.joinedAt),
+    [profile.joinedAt]
+  );
+
+  const pageMeta = useMemo(
+    () => ({
+      login: {
+        title: "ログイン",
+        desc: "登録済みのメールアドレスでログインしてください",
+      },
+      register: {
+        title: "新規登録",
+        desc: "無料で登録して、あなただけの会員番号を受け取りましょう",
+      },
+      "digital-card": {
+        title: "デジタル会員証",
+        desc: "あなたのデジタル会員証を確認できます",
+      },
       profile: {
-        nickname: "ましゅまろん",
-        email: "fanclub@example.com",
-        bio: "兄弟チャンネルを最初期から応援しています。",
-        memberNumber: 87,
-        joinedAt: "2023-04-15",
+        title: "会員情報",
+        desc: "登録情報やプロフィールを確認・編集できます",
       },
-      draftProfile: {
-        nickname: "ましゅまろん",
-        email: "fanclub@example.com",
-        bio: "兄弟チャンネルを最初期から応援しています。",
-        memberNumber: 87,
-        joinedAt: "2023-04-15",
+      status: {
+        title: "ステータス",
+        desc: "現在のランクや継続期間を確認できます",
       },
+      notices: {
+        title: "お知らせ",
+        desc: "ファンクラブの最新情報をチェックできます",
+      },
+      sns: {
+        title: "SNS連携",
+        desc: "SNS連携機能は現在準備中です",
+      },
+      notifications: {
+        title: "新着通知",
+        desc: "未読のお知らせや更新情報をまとめて確認できます",
+      },
+    }),
+    []
+  );
+
+  const menuItems = [
+    { key: "digital-card", label: "デジタル会員証", desc: "あなたの会員証を確認" },
+    { key: "profile", label: "会員情報", desc: "登録情報の確認・編集" },
+    { key: "status", label: "ステータス", desc: "ランク・継続期間を確認" },
+    { key: "notices", label: "お知らせ", desc: "最新情報をチェック" },
+    { key: "sns", label: "SNS連携", desc: "今後追加予定" },
+  ];
+
+  const notices = [
+    {
+      id: 1,
+      category: "動画更新",
+      title: "新しい動画を公開しました",
+      body: "最新動画をYouTubeに公開しました。ぜひチェックして、感想もコメントで教えてください。",
+      date: "2026.05.14",
+      isNew: true,
+    },
+    {
+      id: 2,
+      category: "お知らせ",
+      title: "ファンサイトを準備中です",
+      body: "現在、正式リリースに向けて会員証・ランク機能・お知らせ機能を調整しています。",
+      date: "2026.05.10",
+      isNew: true,
+    },
+  ];
+
+  const getRankColor = (key) => {
+    switch (key) {
+      case "villager":
+        return "text-stone-500";
+      case "apprentice":
+        return "text-sky-500";
+      case "novice":
+        return "text-emerald-500";
+      case "adventurer":
+        return "text-violet-500";
+      case "year1":
+        return "text-indigo-500";
+      case "year2":
+        return "text-pink-500";
+      case "year3":
+        return "text-yellow-500";
+      case "legend":
+        return "text-orange-500";
+      case "legend_plus":
+        return "text-amber-400";
+      default:
+        return "text-slate-900";
+    }
+  };
+
+  const getRankGradient = (key) => {
+    switch (key) {
+      case "villager":
+        return "from-stone-300 to-stone-500";
+      case "apprentice":
+        return "from-sky-300 to-sky-500";
+      case "novice":
+        return "from-emerald-300 to-emerald-500";
+      case "adventurer":
+        return "from-violet-300 to-violet-600";
+      case "year1":
+        return "from-indigo-300 to-indigo-600";
+      case "year2":
+        return "from-pink-300 to-pink-600";
+      case "year3":
+        return "from-yellow-300 to-yellow-500";
+      case "legend":
+        return "from-orange-300 to-orange-600";
+      case "legend_plus":
+        return "from-amber-200 via-yellow-300 to-orange-400";
+      default:
+        return "from-pink-500 to-violet-500";
+    }
+  };
+
+  useEffect(() => {
+    const onHashChange = () => setActivePage(getPageFromHash());
+    if (!window.location.hash) {
+      window.history.replaceState(null, "", ROUTES.login);
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      try {
+        if (!user) {
+          setIsLoggedIn(false);
+          setProfile(EMPTY_PROFILE);
+          setDraftProfile(EMPTY_PROFILE);
+          if (!isAuthPage) goTo("login");
+          return;
+        }
+
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          const fallbackProfile = await createMemberProfile(
+            user,
+            user.email?.split("@")[0] || "メンバー"
+          );
+          setProfile(fallbackProfile);
+          setDraftProfile(fallbackProfile);
+        } else {
+          const nextProfile = toProfile(user, userSnap.data());
+          setProfile(nextProfile);
+          setDraftProfile(nextProfile);
+        }
+
+        setIsLoggedIn(true);
+        if (
+          !window.location.hash ||
+          window.location.hash === ROUTES.login ||
+          window.location.hash === ROUTES.register
+        ) {
+          window.history.replaceState(null, "", ROUTES.card);
+          setActivePage("digital-card");
+        }
+      } catch (error) {
+        console.error(error);
+        setAuthMessage("ログイン状態の読み込みに失敗しました");
+      } finally {
+        setIsAuthChecking(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    setDraftProfile(profile);
+  }, [profile]);
+
+  const goTo = (pageKey) => {
+    const route =
+      Object.entries(ROUTE_TO_PAGE).find(([, value]) => value === pageKey)?.[0] ||
+      ROUTES.login;
+    if (typeof window !== "undefined") {
+      window.location.hash = route;
+    }
+    setActivePage(pageKey);
+  };
+
+  const guardedGoTo = (pageKey) => {
+    if (!isLoggedIn && !["login", "register"].includes(pageKey)) {
+      goTo("login");
+      return;
+    }
+    goTo(pageKey);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!auth.currentUser) {
+      setSaveMessage("ログインしてください");
+      return;
+    }
+    if (!draftProfile.nickname.trim()) {
+      setSaveMessage("ニックネームを入力してください");
+      return;
+    }
+
+    const nextProfile = {
+      ...profile,
+      nickname: draftProfile.nickname.trim(),
+      bio: draftProfile.bio || "よろしくお願いします。",
     };
 
-    function seedUsersIfNeeded() {
-      const savedUsers = localStorage.getItem(USERS_KEY);
-      if (savedUsers) return;
-      const seedUser = {
-        nickname: "ましゅまろん",
-        email: "fanclub@example.com",
-        password: "password123",
-        bio: "兄弟チャンネルを最初期から応援しています。",
-        memberNumber: 87,
-        joinedAt: "2023-04-15",
-      };
-      localStorage.setItem(USERS_KEY, JSON.stringify([seedUser]));
-      localStorage.setItem(MEMBER_COUNTER_KEY, "87");
+    try {
+      await setDoc(
+        doc(db, "users", auth.currentUser.uid),
+        {
+          nickname: nextProfile.nickname,
+          bio: nextProfile.bio,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+      setProfile(nextProfile);
+      setDraftProfile(nextProfile);
+      setIsEditingProfile(false);
+      setSaveMessage("会員情報を保存しました");
+      window.setTimeout(() => setSaveMessage(""), 2500);
+    } catch (error) {
+      console.error(error);
+      setSaveMessage("保存に失敗しました");
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!loginForm.email || !loginForm.password) {
+      setAuthMessage("メールアドレスとパスワードを入力してください");
+      return;
+    }
+    if (!isValidEmail(loginForm.email)) {
+      setAuthMessage("有効なメールアドレスを入力してください");
+      return;
     }
 
-    function isValidEmail(email) {
-      const value = String(email || "").trim();
-      if (!value || value.includes(" ")) return false;
-      const parts = value.split("@");
-      if (parts.length !== 2) return false;
-      const [local, domain] = parts;
-      if (!local || !domain) return false;
-      if (!domain.includes(".")) return false;
-      if (domain.startsWith(".") || domain.endsWith(".")) return false;
-      return true;
+    try {
+      setAuthMessage("");
+      await signInWithEmailAndPassword(
+        auth,
+        loginForm.email.trim().toLowerCase(),
+        loginForm.password
+      );
+    } catch (error) {
+      console.error(error);
+      setAuthMessage("メールアドレスまたはパスワードが正しくありません");
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!registerForm.nickname || !registerForm.email || !registerForm.password) {
+      setAuthMessage("ニックネーム・メールアドレス・パスワードを入力してください");
+      return;
+    }
+    if (!isValidEmail(registerForm.email)) {
+      setAuthMessage("有効なメールアドレスを入力してください");
+      return;
+    }
+    if (registerForm.password.length < 6) {
+      setAuthMessage("パスワードは6文字以上で入力してください");
+      return;
     }
 
-    function formatMemberNumber(num) {
-      return `No.${String(num).padStart(6, "0")}`;
-    }
-
-    function calculateStatus(joinedAt) {
-      const joinDate = new Date(`${joinedAt}T00:00:00`);
-      const now = new Date();
-      const totalDays = Math.max(0, Math.floor((now.getTime() - joinDate.getTime()) / 86400000));
-
-      let years = now.getFullYear() - joinDate.getFullYear();
-      let months = now.getMonth() - joinDate.getMonth();
-      let days = now.getDate() - joinDate.getDate();
-
-      if (days < 0) {
-        months -= 1;
-        const prevMonthLastDate = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
-        days += prevMonthLastDate;
-      }
-      if (months < 0) {
-        years -= 1;
-        months += 12;
-      }
-
-      const milestones = [
-        { key: "new", label: "NEW MEMBER", jp: "新規ファン", years: 0 },
-        { key: "support", label: "SUPPORT MEMBER", jp: "応援メンバー", years: 1 },
-        { key: "legend", label: "LEGEND MEMBER", jp: "古参ファン", years: 3 },
-        { key: "legend_plus", label: "LEGEND+", jp: "超古参ファン", years: 5 },
-      ];
-
-      let currentRank = milestones[0];
-      let nextRank = null;
-      for (let i = 0; i < milestones.length; i += 1) {
-        if (years >= milestones[i].years) {
-          currentRank = milestones[i];
-          nextRank = milestones[i + 1] || null;
-        }
-      }
-
-      let nextRankText = "最高ランクです";
-      let progressPercent = 100;
-      if (nextRank) {
-        const monthsSinceJoin = years * 12 + months;
-        const currentThresholdMonths = currentRank.years * 12;
-        const nextThresholdMonths = nextRank.years * 12;
-        const currentProgressMonths = Math.max(0, monthsSinceJoin - currentThresholdMonths);
-        const neededMonths = Math.max(1, nextThresholdMonths - currentThresholdMonths);
-        progressPercent = Math.min(100, Math.max(0, Math.round((currentProgressMonths / neededMonths) * 100)));
-
-        const remainingMonths = Math.max(0, nextThresholdMonths - monthsSinceJoin);
-        const remainingYears = Math.floor(remainingMonths / 12);
-        const remainingOnlyMonths = remainingMonths % 12;
-        if (remainingYears > 0 && remainingOnlyMonths > 0) nextRankText = `あと${remainingYears}年${remainingOnlyMonths}ヶ月`;
-        else if (remainingYears > 0) nextRankText = `あと${remainingYears}年`;
-        else if (remainingOnlyMonths > 0) nextRankText = `あと${remainingOnlyMonths}ヶ月`;
-        else nextRankText = "まもなく到達";
-      }
-
-      const durationText = years > 0 ? `${years}年${months}ヶ月` : `${months}ヶ月${days}日`;
-      return {
-        totalDays,
-        currentRank,
-        nextRank,
-        nextRankText,
-        progressPercent,
-        durationText,
-        yearsLabel: years >= 1 ? `${years}年目` : "1年目",
-      };
-    }
-
-    function getUsers() {
-      return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    }
-
-    function setUsers(users) {
-      localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    }
-
-    function saveProfile(profile) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-    }
-
-    function escapeHtml(value) {
-      return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function loadState() {
-      seedUsersIfNeeded();
-      const savedProfile = localStorage.getItem(STORAGE_KEY);
-      const savedAuth = localStorage.getItem(AUTH_KEY);
-
-      if (savedProfile) {
-        try {
-          const parsed = JSON.parse(savedProfile);
-          state.profile = { ...state.profile, ...parsed };
-          state.draftProfile = { ...state.profile };
-        } catch (e) {}
-      }
-
-      if (savedAuth) {
-        try {
-          const parsed = JSON.parse(savedAuth);
-          if (parsed.isLoggedIn && parsed.email) {
-            const currentUser = getUsers().find((u) => u.email === parsed.email);
-            if (currentUser) {
-              state.isLoggedIn = true;
-              state.profile = {
-                nickname: currentUser.nickname,
-                email: currentUser.email,
-                bio: currentUser.bio || "よろしくお願いします。",
-                memberNumber: Number(currentUser.memberNumber) || 1,
-                joinedAt: currentUser.joinedAt || new Date().toISOString().slice(0, 10),
-              };
-              state.draftProfile = { ...state.profile };
-              state.page = routes.card;
-            }
-          }
-        } catch (e) {}
-      }
-    }
-
-    function navigate(page) {
-      if (!state.isLoggedIn && ![routes.login, routes.register].includes(page)) {
-        state.page = routes.login;
+    try {
+      setAuthMessage("");
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        registerForm.email.trim().toLowerCase(),
+        registerForm.password
+      );
+      const nextProfile = await createMemberProfile(
+        userCredential.user,
+        registerForm.nickname
+      );
+      setProfile(nextProfile);
+      setDraftProfile(nextProfile);
+      setRegisterForm({ nickname: "", email: "", password: "" });
+      setLoginForm({ email: "", password: "" });
+      setIsLoggedIn(true);
+      goTo("digital-card");
+    } catch (error) {
+      console.error(error);
+      if (error.code === "auth/email-already-in-use") {
+        setAuthMessage("そのメールアドレスはすでに登録されています。ログインしてください");
       } else {
-        state.page = page;
+        setAuthMessage("登録に失敗しました。入力内容を確認してください");
       }
-      state.authMessage = "";
-      render();
     }
+  };
 
-    function handleLogin() {
-      const { email, password } = state.loginForm;
-      if (!email || !password) {
-        state.authMessage = "メールアドレスとパスワードを入力してください";
-        return render();
-      }
-      if (!isValidEmail(email)) {
-        state.authMessage = "有効なメールアドレスを入力してください";
-        return render();
-      }
-      const normalizedEmail = email.trim().toLowerCase();
-      const matchedUser = getUsers().find((u) => u.email.trim().toLowerCase() === normalizedEmail && u.password === password);
-      if (!matchedUser) {
-        state.authMessage = "メールアドレスまたはパスワードが正しくありません";
-        return render();
-      }
-      state.isLoggedIn = true;
-      state.profile = {
-        nickname: matchedUser.nickname,
-        email: matchedUser.email,
-        bio: matchedUser.bio,
-        memberNumber: matchedUser.memberNumber,
-        joinedAt: matchedUser.joinedAt,
-      };
-      state.draftProfile = { ...state.profile };
-      localStorage.setItem(AUTH_KEY, JSON.stringify({ isLoggedIn: true, email: matchedUser.email }));
-      saveProfile(state.profile);
-      navigate(routes.card);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setIsLoggedIn(false);
+      setIsEditingProfile(false);
+      setAuthMessage("");
+      setProfile(EMPTY_PROFILE);
+      setDraftProfile(EMPTY_PROFILE);
+      goTo("login");
+    } catch (error) {
+      console.error(error);
+      setAuthMessage("ログアウトに失敗しました");
     }
+  };
 
-    function handleRegister() {
-      const { nickname, email, password } = state.registerForm;
-      if (!nickname || !email || !password) {
-        state.authMessage = "ニックネーム・メールアドレス・パスワードを入力してください";
-        return render();
-      }
-      if (!isValidEmail(email)) {
-        state.authMessage = "有効なメールアドレスを入力してください";
-        return render();
-      }
-      const normalizedEmail = email.trim().toLowerCase();
-      const duplicateUser = getUsers().find((u) => u.email.trim().toLowerCase() === normalizedEmail);
-      if (duplicateUser) {
-        state.authMessage = "そのメールアドレスはすでに登録されています。ログインしてください";
-        return render();
-      }
-      const nextMemberNumber = Number(localStorage.getItem(MEMBER_COUNTER_KEY) || "0") + 1;
-      localStorage.setItem(MEMBER_COUNTER_KEY, String(nextMemberNumber));
-      const today = new Date().toISOString().slice(0, 10);
-      const newUser = {
-        nickname,
-        email: normalizedEmail,
-        password,
-        bio: "よろしくお願いします。",
-        memberNumber: nextMemberNumber,
-        joinedAt: today,
-      };
-      const users = getUsers();
-      users.push(newUser);
-      setUsers(users);
-      state.isLoggedIn = true;
-      state.profile = {
-        nickname: newUser.nickname,
-        email: newUser.email,
-        bio: newUser.bio,
-        memberNumber: newUser.memberNumber,
-        joinedAt: newUser.joinedAt,
-      };
-      state.draftProfile = { ...state.profile };
-      state.loginForm = { email: normalizedEmail, password };
-      state.registerForm = { nickname: "", email: "", password: "" };
-      localStorage.setItem(AUTH_KEY, JSON.stringify({ isLoggedIn: true, email: normalizedEmail }));
-      saveProfile(state.profile);
-      navigate(routes.card);
-    }
+  const renderRank = (rank = statusInfo.currentRank, extraClass = "") => (
+    <span className={`${getRankColor(rank.key)} ${extraClass}`}>{rank.jp}</span>
+  );
 
-    function handleLogout() {
-      state.isLoggedIn = false;
-      state.page = routes.login;
-      state.authMessage = "";
-      state.isEditingProfile = false;
-      localStorage.removeItem(AUTH_KEY);
-      render();
-    }
+  const renderNoticeList = () => (
+    <div className="mt-6 space-y-4">
+      {notices.map((notice) => (
+        <article
+          key={notice.id}
+          className="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-black tracking-[0.12em] text-violet-500">
+              {notice.category}
+            </span>
+            {notice.isNew && (
+              <span className="rounded-full bg-pink-500 px-3 py-1 text-xs font-black text-white">
+                NEW
+              </span>
+            )}
+            <span className="text-sm font-bold text-slate-400">{notice.date}</span>
+          </div>
 
-    function handleSaveProfile() {
-      if (!isValidEmail(state.draftProfile.email)) {
-        state.saveMessage = "有効なメールアドレスを入力してください";
-        return render();
-      }
-      const prevEmail = state.profile.email;
-      state.profile = { ...state.draftProfile };
-      state.draftProfile = { ...state.profile };
-      saveProfile(state.profile);
-      const users = getUsers().map((u) => {
-        if (u.email === prevEmail) {
-          return {
-            ...u,
-            nickname: state.profile.nickname,
-            email: state.profile.email,
-            bio: state.profile.bio,
-          };
-        }
-        return u;
-      });
-      setUsers(users);
-      localStorage.setItem(AUTH_KEY, JSON.stringify({ isLoggedIn: true, email: state.profile.email }));
-      state.isEditingProfile = false;
-      state.saveMessage = "会員情報を保存しました";
-      render();
-      setTimeout(() => {
-        state.saveMessage = "";
-        render();
-      }, 2500);
-    }
+          <h3 className="mt-4 text-2xl font-black text-slate-900">
+            {notice.title}
+          </h3>
+          <p className="mt-2 text-base font-medium leading-7 text-slate-600">
+            {notice.body}
+          </p>
+        </article>
+      ))}
+    </div>
+  );
 
-    function renderEmptyNotices() {
-      return `<div class="py-10 text-center text-lg font-semibold text-slate-400">まだお知らせはありません</div>`;
-    }
-
-    function renderAuthPage(type) {
-      const isRegister = type === routes.register;
-      return `
-        <div class="mx-auto max-w-[560px]">
-          <div class="rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
-            <div class="text-center">
-              <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-pink-50 text-violet-500">
-                <span class="text-2xl font-black">FC</span>
-              </div>
-              <h2 class="mt-6 text-4xl font-black text-slate-900">${isRegister ? "新規登録" : "ログイン"}</h2>
-              <p class="mt-3 text-lg font-medium text-slate-500">${isRegister ? "無料で登録して、あなただけの会員番号を受け取りましょう" : "登録済みのメールアドレスでログインしてください"}</p>
+  const renderAuthPage = (type) => {
+    const isRegister = type === "register";
+    return (
+      <div className="mx-auto max-w-[560px]">
+        <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+          <div className="text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-pink-50 text-violet-500">
+              <span className="text-2xl font-black">FC</span>
             </div>
-            <div class="mt-8 space-y-5">
-              ${isRegister ? `<div><label class="text-sm font-bold tracking-[0.12em] text-slate-400">ニックネーム</label><input data-field="register-nickname" value="${escapeHtml(state.registerForm.nickname)}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-lg font-semibold text-slate-900 outline-none" placeholder="ニックネームを入力" /></div>` : ""}
-              <div><label class="text-sm font-bold tracking-[0.12em] text-slate-400">メールアドレス</label><input data-field="${isRegister ? "register-email" : "login-email"}" value="${escapeHtml(isRegister ? state.registerForm.email : state.loginForm.email)}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-lg font-semibold text-slate-900 outline-none" placeholder="example@email.com" /></div>
-              <div><label class="text-sm font-bold tracking-[0.12em] text-slate-400">パスワード</label><input type="password" data-field="${isRegister ? "register-password" : "login-password"}" value="${escapeHtml(isRegister ? state.registerForm.password : state.loginForm.password)}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-lg font-semibold text-slate-900 outline-none" placeholder="••••••••" /></div>
-            </div>
-            ${state.authMessage ? `<div class="mt-5 rounded-2xl bg-pink-50 px-4 py-3 text-sm font-bold text-pink-500">${escapeHtml(state.authMessage)}</div>` : ""}
-            <button data-action="${isRegister ? "submit-register" : "submit-login"}" class="mt-8 w-full rounded-full bg-violet-500 px-6 py-4 text-xl font-bold text-white">${isRegister ? "無料で登録する" : "ログインする"}</button>
-            ${isRegister ? `<div class="mt-4 rounded-2xl bg-slate-50 px-4 py-4 text-sm font-semibold leading-7 text-slate-500">登録が完了すると、登録順に会員番号が自動発行されます。<br>表示例: No.000001 / No.000002 / No.000003</div>` : ""}
-            <div class="mt-6 text-center text-base font-semibold text-slate-500">${isRegister ? "すでに登録済みですか？" : "まだ登録していませんか？"}<button data-action="${isRegister ? "goto-login" : "goto-register"}" class="ml-2 font-black text-violet-500">${isRegister ? "ログインへ" : "新規登録へ"}</button></div>
+            <h2 className="mt-6 text-4xl font-black text-slate-900">
+              {isRegister ? "新規登録" : "ログイン"}
+            </h2>
+            <p className="mt-3 text-lg font-medium text-slate-500">
+              {isRegister
+                ? "無料で登録して、あなただけの会員番号を受け取りましょう"
+                : "登録済みのメールアドレスでログインしてください"}
+            </p>
           </div>
-        </div>`;
-    }
 
-    function renderProfile() {
-      return `
-        <div class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-3xl font-black text-slate-900">会員情報</h2>
-            ${state.saveMessage ? `<div class="rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-600">${escapeHtml(state.saveMessage)}</div>` : ""}
-          </div>
-          <div class="mt-6 grid gap-5 sm:grid-cols-2">
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5"><div class="text-sm font-bold tracking-[0.12em] text-slate-400">ニックネーム</div>${state.isEditingProfile ? `<input data-field="profile-nickname" value="${escapeHtml(state.draftProfile.nickname)}" class="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-2xl font-black text-slate-900 outline-none" />` : `<div class="mt-2 text-2xl font-black text-slate-900">${escapeHtml(state.profile.nickname)}</div>`}</div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5"><div class="text-sm font-bold tracking-[0.12em] text-slate-400">会員番号</div><div class="mt-2 text-2xl font-black text-slate-900">${formatMemberNumber(state.profile.memberNumber)}</div></div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5"><div class="text-sm font-bold tracking-[0.12em] text-slate-400">メールアドレス</div>${state.isEditingProfile ? `<input data-field="profile-email" value="${escapeHtml(state.draftProfile.email)}" class="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xl font-bold text-slate-900 outline-none" />` : `<div class="mt-2 text-2xl font-black text-slate-900">${escapeHtml(state.profile.email)}</div>`}</div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5"><div class="text-sm font-bold tracking-[0.12em] text-slate-400">登録日</div><div class="mt-2 text-2xl font-black text-slate-900">${escapeHtml(state.profile.joinedAt.replaceAll("-", "."))}</div></div>
-          </div>
-          <div class="mt-5"><div class="rounded-2xl border border-slate-200 bg-slate-50 p-5"><div class="text-sm font-bold tracking-[0.12em] text-slate-400">自己紹介</div>${state.isEditingProfile ? `<textarea data-field="profile-bio" rows="4" class="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-medium text-slate-900 outline-none">${escapeHtml(state.draftProfile.bio)}</textarea>` : `<div class="mt-2 text-lg font-semibold leading-8 text-slate-700">${escapeHtml(state.profile.bio)}</div>`}</div></div>
-          <div class="mt-6 flex flex-wrap gap-3">${state.isEditingProfile ? `<button data-action="save-profile" class="rounded-full bg-violet-500 px-6 py-3 text-lg font-bold text-white">保存する</button><button data-action="cancel-profile" class="rounded-full border border-slate-200 bg-white px-6 py-3 text-lg font-bold text-slate-700">キャンセル</button>` : `<button data-action="edit-profile" class="rounded-full bg-violet-500 px-6 py-3 text-lg font-bold text-white">プロフィールを編集</button>`}</div>
-        </div>`;
-    }
-
-    function renderStatus(statusInfo) {
-      return `
-        <div class="space-y-6">
-          <div class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 class="text-3xl font-black text-slate-900">現在のランク</h2>
-            <div class="mt-6 grid gap-5 md:grid-cols-3">
-              ${[["現在のランク", statusInfo.currentRank.jp], ["継続期間", statusInfo.durationText], ["次のランクまで", statusInfo.nextRank ? statusInfo.nextRankText : "最高ランクです"]].map(([label, value]) => `<div class="rounded-2xl border border-slate-200 bg-slate-50 p-5"><div class="text-sm font-bold tracking-[0.12em] text-slate-400">${label}</div><div class="mt-2 text-3xl font-black text-slate-900">${escapeHtml(value)}</div></div>`).join("")}
-            </div>
-          </div>
-          <div class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 class="text-3xl font-black text-slate-900">ランク進行状況</h2>
-            <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-              <div class="flex items-center justify-between gap-4">
-                <div><div class="text-sm font-bold tracking-[0.12em] text-slate-400">現在の英語ランク</div><div class="mt-2 text-2xl font-black text-slate-900">${statusInfo.currentRank.label}</div></div>
-                <div class="text-right"><div class="text-sm font-bold tracking-[0.12em] text-slate-400">経過日数</div><div class="mt-2 text-2xl font-black text-slate-900">${statusInfo.totalDays}日</div></div>
-              </div>
-              <div class="mt-6 h-3 overflow-hidden rounded-full bg-slate-200"><div class="h-full rounded-full bg-gradient-to-r from-pink-500 to-violet-500" style="width:${statusInfo.progressPercent}%"></div></div>
-              <div class="mt-3 flex items-center justify-between text-sm font-bold text-slate-400"><span>${statusInfo.currentRank.label}</span><span>${statusInfo.nextRank ? statusInfo.nextRank.label : "MAX"}</span></div>
-            </div>
-          </div>
-        </div>`;
-    }
-
-    function renderCard(statusInfo) {
-      return `
-        <div class="space-y-6">
-          <div class="relative overflow-hidden rounded-[34px] bg-[#07090d] p-8 text-white shadow-[0_18px_40px_rgba(15,23,42,0.18)] sm:p-10">
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(167,139,250,0.14),transparent_28%),radial-gradient(circle_at_82%_78%,rgba(96,165,250,0.12),transparent_24%),linear-gradient(135deg,#05070a_0%,#0a0d13_52%,#090b10_100%)]"></div>
-            <div class="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:28px_28px]"></div>
-            <div class="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.15fr_0.95fr] lg:items-center">
+          <div className="mt-8 space-y-5">
+            {isRegister && (
               <div>
-                <div class="text-4xl font-black tracking-[0.18em]">FAN CLUB</div>
-                <div class="mt-1 text-sm font-semibold tracking-[0.18em] text-white/60">OFFICIAL COMMUNITY</div>
-                <div class="mt-10 max-w-xl text-[clamp(2.3rem,4vw,4.2rem)] font-black uppercase leading-[1.03] tracking-[0.1em] text-transparent bg-gradient-to-r from-violet-300 via-slate-200 to-slate-400 bg-clip-text">Digital<br>Member Card</div>
-                <div class="mt-10 text-[clamp(2rem,3vw,3.8rem)] font-black tracking-wide">${escapeHtml(state.profile.nickname)}</div>
-                <div class="mt-8 text-lg font-semibold uppercase tracking-[0.18em] text-white/65">Member No.</div>
-                <div class="mt-3 font-black leading-none tracking-[0.08em] text-[clamp(4.2rem,7vw,7.2rem)] text-white">${String(state.profile.memberNumber).padStart(6, "0")}</div>
-                <div class="mt-5 flex items-center gap-3 text-xl font-medium tracking-[0.18em] text-white/70"><span>SINCE</span><span class="text-white">${escapeHtml(state.profile.joinedAt.replaceAll("-", "."))}</span></div>
+                <label className="text-sm font-bold tracking-[0.12em] text-slate-400">
+                  ニックネーム
+                </label>
+                <input
+                  value={registerForm.nickname}
+                  onChange={(e) =>
+                    setRegisterForm((prev) => ({ ...prev, nickname: e.target.value }))
+                  }
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-violet-300"
+                  placeholder="ニックネームを入力"
+                />
               </div>
-              <div class="flex flex-col items-center justify-center">
-                <div class="relative flex h-[320px] w-[320px] items-center justify-center sm:h-[360px] sm:w-[360px]"><div class="absolute inset-0 rounded-full border border-white/10"></div><div class="absolute inset-6 rounded-full border border-white/5"></div><div class="relative h-56 w-56 rounded-full bg-white/5 backdrop-blur-sm"></div></div>
-                <div class="mt-3 rounded-full border border-violet-300/30 px-8 py-4 text-center text-[clamp(1.6rem,2vw,2.3rem)] font-black tracking-[0.16em] text-violet-200">${statusInfo.currentRank.label}</div>
-                <div class="mt-4 rounded-full border border-white/10 px-8 py-3 text-xl font-bold tracking-[0.2em] text-white/85">${statusInfo.yearsLabel}</div>
+            )}
+
+            <div>
+              <label className="text-sm font-bold tracking-[0.12em] text-slate-400">
+                メールアドレス
+              </label>
+              <input
+                value={isRegister ? registerForm.email : loginForm.email}
+                onChange={(e) =>
+                  isRegister
+                    ? setRegisterForm((prev) => ({ ...prev, email: e.target.value }))
+                    : setLoginForm((prev) => ({ ...prev, email: e.target.value }))
+                }
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-violet-300"
+                placeholder="example@email.com"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-bold tracking-[0.12em] text-slate-400">
+                パスワード
+              </label>
+              <input
+                type="password"
+                value={isRegister ? registerForm.password : loginForm.password}
+                onChange={(e) =>
+                  isRegister
+                    ? setRegisterForm((prev) => ({ ...prev, password: e.target.value }))
+                    : setLoginForm((prev) => ({ ...prev, password: e.target.value }))
+                }
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-violet-300"
+                placeholder="6文字以上"
+              />
+            </div>
+          </div>
+
+          {authMessage && (
+            <div className="mt-5 rounded-2xl bg-pink-50 px-4 py-3 text-sm font-bold text-pink-500">
+              {authMessage}
+            </div>
+          )}
+
+          <button
+            onClick={isRegister ? handleRegister : handleLogin}
+            disabled={isAuthChecking}
+            className="mt-8 w-full rounded-full bg-violet-500 px-6 py-4 text-xl font-bold text-white transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50"
+          >
+            {isRegister ? "無料で登録する" : "ログインする"}
+          </button>
+
+          {isRegister && (
+            <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-4 text-sm font-semibold leading-7 text-slate-500">
+              登録が完了すると、登録順に会員番号が自動発行されます。
+              <br />
+              正式版では No.000001 から始まります。
+            </div>
+          )}
+
+          <div className="mt-6 text-center text-base font-semibold text-slate-500">
+            {isRegister ? "すでに登録済みですか？" : "まだ登録していませんか？"}
+            <button
+              onClick={() => {
+                setAuthMessage("");
+                goTo(isRegister ? "login" : "register");
+              }}
+              className="ml-2 font-black text-violet-500"
+            >
+              {isRegister ? "ログインへ" : "新規登録へ"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMainContent = () => {
+    if (activePage === "login") return renderAuthPage("login");
+    if (activePage === "register") return renderAuthPage("register");
+
+    if (activePage === "digital-card") {
+      return (
+        <>
+          <div className="relative overflow-hidden rounded-[34px] bg-[#07090d] p-7 text-white shadow-[0_18px_40px_rgba(15,23,42,0.18)] sm:p-10">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(167,139,250,0.14),transparent_28%),radial-gradient(circle_at_82%_78%,rgba(96,165,250,0.12),transparent_24%),linear-gradient(135deg,#05070a_0%,#0a0d13_52%,#090b10_100%)]" />
+            <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:28px_28px]" />
+
+            <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.15fr_0.95fr] lg:items-center">
+              <div>
+                <div className="text-3xl font-black tracking-[0.18em] sm:text-4xl">FAN CLUB</div>
+                <div className="mt-1 text-sm font-semibold tracking-[0.18em] text-white/60">
+                  OFFICIAL COMMUNITY
+                </div>
+
+                <div className="mt-10 max-w-xl bg-gradient-to-r from-violet-300 via-slate-200 to-slate-400 bg-clip-text text-[clamp(2.2rem,4vw,4.2rem)] font-black uppercase leading-[1.03] tracking-[0.1em] text-transparent">
+                  Digital
+                  <br />
+                  Member Card
+                </div>
+
+                <div className="mt-10 text-[clamp(2rem,3vw,3.8rem)] font-black tracking-wide">
+                  {profile.nickname}
+                </div>
+
+                <div className="mt-8 text-lg font-semibold uppercase tracking-[0.18em] text-white/65">
+                  Member No.
+                </div>
+
+                <div className="mt-3 text-[clamp(3.4rem,7vw,7.2rem)] font-black leading-none tracking-[0.08em] text-white">
+                  {String(profile.memberNumber).padStart(6, "0")}
+                </div>
+
+                <div className="mt-5 flex items-center gap-3 text-xl font-medium tracking-[0.18em] text-white/70">
+                  <span>SINCE</span>
+                  <span className="text-white">{profile.joinedAt.replaceAll("-", ".")}</span>
+                </div>
+
+                <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
+                  <div>
+                    <div className="text-sm font-bold tracking-[0.18em] text-white/45">
+                      FAN CLUB ID
+                    </div>
+                    <div className="mt-2 text-lg font-black tracking-[0.18em] text-white/85">
+                      FC-{String(profile.memberNumber).padStart(6, "0")}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-white p-3 shadow-[0_8px_24px_rgba(0,0,0,0.25)]">
+                    <div className="grid grid-cols-6 gap-[2px] rounded-lg bg-white p-1">
+                      {Array.from({ length: 36 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className={`h-2.5 w-2.5 rounded-sm ${
+                            [0, 1, 2, 5, 6, 7, 12, 14, 16, 18, 19, 20, 23, 24, 28, 30, 31, 33, 34].includes(index)
+                              ? "bg-black"
+                              : "bg-white"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center justify-center">
+                <div className="relative flex h-[260px] w-[260px] items-center justify-center sm:h-[360px] sm:w-[360px]">
+                  <div className="absolute inset-0 rounded-full border border-white/10" />
+                  <div className="absolute inset-6 rounded-full border border-white/5" />
+                  <div className="relative h-[78%] w-[78%] overflow-hidden rounded-full border-4 border-slate-300 bg-slate-900 shadow-[0_18px_45px_rgba(0,0,0,0.45)]">
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800 via-slate-700 to-slate-950 text-7xl font-black text-slate-200">
+                      村
+                    </div>
+                    <div className="absolute inset-0 rounded-full ring-1 ring-white/40" />
+                  </div>
+                </div>
+
+                <div className="mt-3 rounded-full border border-violet-300/30 px-8 py-4 text-center text-[clamp(1.5rem,2vw,2.3rem)] font-black tracking-[0.16em]">
+                  {renderRank(statusInfo.currentRank)}
+                </div>
+
+                <div className="mt-4 rounded-full border border-white/10 px-8 py-3 text-xl font-bold tracking-[0.2em] text-white/85">
+                  {statusInfo.yearsLabel}
+                </div>
               </div>
             </div>
           </div>
-          <div class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm"><div class="flex items-center justify-between"><h2 class="text-3xl font-black text-slate-900">お知らせ</h2><button data-action="goto-notices" class="text-xl font-bold text-violet-500">一覧へ</button></div>${renderEmptyNotices()}</div>
-        </div>`;
+
+          <div className={sectionCardClass}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-3xl font-black text-slate-900">お知らせ</h2>
+              <button
+                onClick={() => guardedGoTo("notices")}
+                className="text-xl font-bold text-violet-500"
+              >
+                一覧へ
+              </button>
+            </div>
+            {renderNoticeList()}
+          </div>
+        </>
+      );
     }
 
-    function renderLoggedInLayout() {
-      const statusInfo = calculateStatus(state.profile.joinedAt);
-      const pageTitles = {
-        card: ["デジタル会員証", "あなたのデジタル会員証を確認できます"],
-        profile: ["会員情報", "登録情報やプロフィールを確認・編集できます"],
-        status: ["ステータス", "現在のランクや継続期間を確認できます"],
-        notices: ["お知らせ", "ファンクラブの最新情報をチェックできます"],
-        sns: ["SNS連携", "SNS連携機能は現在準備中です"],
-        notifications: ["新着通知", "未読のお知らせや更新情報をまとめて確認できます"],
-      };
-      let main = "";
-      if (state.page === routes.card) main = renderCard(statusInfo);
-      else if (state.page === routes.profile) main = renderProfile();
-      else if (state.page === routes.status) main = renderStatus(statusInfo);
-      else if (state.page === routes.notices || state.page === routes.notifications) main = `<div class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm"><h2 class="text-3xl font-black text-slate-900">お知らせ一覧</h2>${renderEmptyNotices()}</div>`;
-      else main = `<div class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm"><h2 class="text-3xl font-black text-slate-900">SNS連携</h2><p class="mt-3 text-lg font-medium text-slate-500">SNS連携機能は現在準備中です。</p></div>`;
+    if (activePage === "profile") {
+      return (
+        <div className={sectionCardClass}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-3xl font-black text-slate-900">会員情報</h2>
+            {saveMessage && (
+              <div className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-600">
+                {saveMessage}
+              </div>
+            )}
+          </div>
 
-      return `
-        <div class="min-h-screen bg-[#f7f7fb] text-slate-900">
-          <header class="border-b border-slate-200 bg-white/95 backdrop-blur">
-            <div class="mx-auto flex max-w-[1600px] items-center justify-between px-5 py-4 lg:px-8">
-              <button data-action="goto-card" class="text-left">
-                <div class="text-4xl font-black tracking-[0.22em] text-slate-900">FAN CLUB</div>
-                <div class="mt-1 text-sm font-semibold tracking-[0.2em] text-slate-500">OFFICIAL COMMUNITY</div>
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            <InfoCard label="ニックネーム">
+              {isEditingProfile ? (
+                <input
+                  value={draftProfile.nickname}
+                  onChange={(e) => setDraftProfile((prev) => ({ ...prev, nickname: e.target.value }))}
+                  className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-2xl font-black text-slate-900 outline-none focus:border-violet-300"
+                />
+              ) : (
+                <div className="mt-2 text-2xl font-black text-slate-900">{profile.nickname}</div>
+              )}
+            </InfoCard>
+
+            <InfoCard label="会員番号">
+              <div className="mt-2 text-2xl font-black text-slate-900">{memberNumberLabel}</div>
+            </InfoCard>
+
+            <InfoCard label="メールアドレス">
+              <div className="mt-2 break-all text-2xl font-black text-slate-900">{profile.email}</div>
+              <p className="mt-2 text-xs font-bold text-slate-400">
+                メールアドレスの変更は正式リリース後に対応予定です。
+              </p>
+            </InfoCard>
+
+            <InfoCard label="登録日">
+              <div className="mt-2 text-2xl font-black text-slate-900">
+                {profile.joinedAt.replaceAll("-", ".")}
+              </div>
+            </InfoCard>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <div className="text-sm font-bold tracking-[0.12em] text-slate-400">自己紹介</div>
+            {isEditingProfile ? (
+              <textarea
+                rows={4}
+                value={draftProfile.bio}
+                onChange={(e) => setDraftProfile((prev) => ({ ...prev, bio: e.target.value }))}
+                className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-medium text-slate-900 outline-none focus:border-violet-300"
+              />
+            ) : (
+              <div className="mt-2 text-lg font-semibold leading-8 text-slate-700">{profile.bio}</div>
+            )}
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            {isEditingProfile ? (
+              <>
+                <button
+                  onClick={handleSaveProfile}
+                  className="rounded-full bg-violet-500 px-6 py-3 text-lg font-bold text-white"
+                >
+                  保存する
+                </button>
+                <button
+                  onClick={() => {
+                    setDraftProfile(profile);
+                    setIsEditingProfile(false);
+                    setSaveMessage("");
+                  }}
+                  className="rounded-full border border-slate-200 bg-white px-6 py-3 text-lg font-bold text-slate-700"
+                >
+                  キャンセル
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setIsEditingProfile(true)}
+                className="rounded-full bg-violet-500 px-6 py-3 text-lg font-bold text-white"
+              >
+                プロフィールを編集
               </button>
-              <div class="flex items-center gap-4">
-                <button data-action="goto-notifications" class="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-violet-500 shadow-sm"><span class="text-lg">🔔</span><span class="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-bold text-white">0</span></button>
-                <button data-action="goto-profile" class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"><div class="text-left"><div class="text-2xl font-black text-slate-900">マイページ</div><div class="text-sm font-medium text-slate-500">${formatMemberNumber(state.profile.memberNumber)}</div></div></button>
-                <button data-action="logout" class="rounded-full border border-slate-200 bg-white px-5 py-3 text-lg font-bold text-slate-700">ログアウト</button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (activePage === "status") {
+      return (
+        <div className="space-y-6">
+          <div className={sectionCardClass}>
+            <h2 className="text-3xl font-black text-slate-900">現在のランク</h2>
+            <div className="mt-6 grid gap-5 md:grid-cols-3">
+              <InfoCard label="現在のランク">
+                <div className="mt-2 text-3xl font-black">{renderRank(statusInfo.currentRank)}</div>
+              </InfoCard>
+              <InfoCard label="継続期間">
+                <div className="mt-2 text-3xl font-black text-slate-900">{statusInfo.durationText}</div>
+              </InfoCard>
+              <InfoCard label="次のランクまで">
+                <div className="mt-2 text-3xl font-black text-slate-900">
+                  {statusInfo.nextRank ? statusInfo.nextRankText : "最高ランクです"}
+                </div>
+              </InfoCard>
+            </div>
+          </div>
+
+          <div className={sectionCardClass}>
+            <h2 className="text-3xl font-black text-slate-900">ランク進行状況</h2>
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-bold tracking-[0.12em] text-slate-400">現在のランク</div>
+                  <div className="mt-2 text-2xl font-black">{renderRank(statusInfo.currentRank)}</div>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-sm font-bold tracking-[0.12em] text-slate-400">経過日数</div>
+                  <div className="mt-2 text-2xl font-black text-slate-900">{statusInfo.totalDays}日</div>
+                </div>
+              </div>
+
+              <div className="mt-6 h-3 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className={`h-full rounded-full bg-gradient-to-r ${getRankGradient(statusInfo.currentRank.key)}`}
+                  style={{ width: `${statusInfo.progressPercent}%` }}
+                />
+              </div>
+
+              <div className="mt-3 flex items-center justify-between text-sm font-bold text-slate-400">
+                <span>{renderRank(statusInfo.currentRank)}</span>
+                <span className={statusInfo.nextRank ? getRankColor(statusInfo.nextRank.key) : "text-slate-400"}>
+                  {statusInfo.nextRank ? statusInfo.nextRank.jp : "MAX"}
+                </span>
               </div>
             </div>
-          </header>
-          <main class="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-5 py-6 lg:grid-cols-[260px_minmax(0,1fr)_270px] lg:px-8">
-            <aside class="space-y-4">
-              ${[
-                [routes.card, "デジタル会員証", "あなたの会員証を確認"],
-                [routes.profile, "会員情報", "登録情報の確認・編集"],
-                [routes.status, "ステータス", "ランク・継続期間を確認"],
-                [routes.notices, "お知らせ", "最新情報をチェック"],
-                [routes.sns, "SNS連携", "今後追加予定"],
-              ].map(([key, label, desc]) => `<button data-action="goto-${key}" class="w-full rounded-[26px] border bg-white px-5 py-5 text-left shadow-sm ${state.page === key ? "border-pink-200 ring-1 ring-pink-100" : "border-slate-200"}"><div class="text-2xl font-black ${state.page === key ? "text-pink-500" : "text-slate-900"}">${label}</div><div class="mt-1 text-sm font-medium text-slate-500">${desc}</div></button>`).join("")}
-            </aside>
-            <section class="space-y-6">
-              <div class="flex items-start justify-between gap-4"><div><h1 class="text-4xl font-black tracking-tight text-slate-900">${pageTitles[state.page][0]}</h1><p class="mt-1 text-lg font-medium text-slate-500">${pageTitles[state.page][1]}</p></div>${state.page === routes.card ? `<button class="rounded-full border border-pink-300 bg-white px-6 py-3 text-lg font-bold text-pink-500">SNSでシェア</button>` : ""}</div>
-              ${main}
-            </section>
-            <aside>
-              <div class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-4xl font-black text-slate-900">あなたのステータス</h2>
-                <div class="mt-6 border-t border-slate-100 pt-6"><div class="text-lg font-semibold text-slate-500">現在のランク</div><div class="mt-3 text-4xl font-black text-slate-900">${statusInfo.currentRank.jp}</div><div class="mt-2 inline-block rounded-full bg-violet-100 px-3 py-1 text-sm font-bold text-violet-500">${statusInfo.yearsLabel}</div></div>
-                <div class="mt-6 border-t border-slate-100 pt-6"><div class="text-lg font-semibold text-slate-500">会員番号</div><div class="mt-3 text-3xl font-black text-slate-900">${formatMemberNumber(state.profile.memberNumber)}</div></div>
-                <div class="mt-6 border-t border-slate-100 pt-6"><div class="text-lg font-semibold text-slate-500">次のランクまで</div><div class="mt-3 text-3xl font-black text-slate-900">${statusInfo.nextRank ? statusInfo.nextRankText : "最高ランクです"}</div></div>
-                <button data-action="goto-status" class="mt-8 w-full rounded-full border border-violet-300 px-5 py-4 text-xl font-bold text-violet-500">ランクについて</button>
+          </div>
+        </div>
+      );
+    }
+
+    if (activePage === "notices" || activePage === "notifications") {
+      return (
+        <div className={sectionCardClass}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900">
+                {activePage === "notifications" ? "新着通知" : "お知らせ一覧"}
+              </h2>
+              <p className="mt-1 text-base font-semibold text-slate-500">
+                動画更新やサイト情報など、ファンクラブの最新情報を確認できます。
+              </p>
+            </div>
+            <div className="rounded-full bg-pink-50 px-4 py-2 text-sm font-black text-pink-500">
+              未読 {notices.filter((notice) => notice.isNew).length}件
+            </div>
+          </div>
+          {renderNoticeList()}
+        </div>
+      );
+    }
+
+    return (
+      <div className={sectionCardClass}>
+        <h2 className="text-3xl font-black text-slate-900">SNS連携</h2>
+        <p className="mt-3 text-lg font-medium text-slate-500">SNS連携機能は現在準備中です。</p>
+      </div>
+    );
+  };
+
+  if (isAuthChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f7f7fb] text-slate-900">
+        <div className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <div className="text-3xl font-black tracking-[0.18em]">FAN CLUB</div>
+          <div className="mt-3 text-lg font-bold text-slate-500">読み込み中...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f7f7fb] text-slate-900">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 lg:px-8">
+          <button
+            onClick={() => guardedGoTo(isLoggedIn ? "digital-card" : "login")}
+            className="text-left"
+          >
+            <div className="text-2xl font-black tracking-[0.22em] text-slate-900 sm:text-4xl">FAN CLUB</div>
+            <div className="mt-1 text-xs font-semibold tracking-[0.2em] text-slate-500 sm:text-sm">
+              OFFICIAL COMMUNITY
+            </div>
+          </button>
+
+          {isAuthPage || !isLoggedIn ? (
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => goTo("login")}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 sm:px-5 sm:py-3 sm:text-lg"
+              >
+                ログイン
+              </button>
+              <button
+                onClick={() => goTo("register")}
+                className="rounded-full bg-violet-500 px-4 py-2 text-sm font-bold text-white sm:px-5 sm:py-3 sm:text-lg"
+              >
+                無料登録
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 sm:gap-4">
+              <button
+                onClick={() => guardedGoTo("notifications")}
+                className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-violet-500 shadow-sm sm:h-12 sm:w-12"
+              >
+                <span className="text-lg">🔔</span>
+                <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-bold text-white">{notices.filter((notice) => notice.isNew).length}</span>
+              </button>
+
+              <button
+                onClick={() => guardedGoTo("profile")}
+                className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:flex"
+              >
+                <div className="text-left">
+                  <div className="text-xl font-black text-slate-900 sm:text-2xl">マイページ</div>
+                  <div className="text-sm font-medium text-slate-500">{memberNumberLabel}</div>
+                </div>
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 sm:px-5 sm:py-3 sm:text-lg"
+              >
+                ログアウト
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      <main
+        className={`mx-auto max-w-[1600px] px-4 py-6 lg:px-8 ${
+          isAuthPage || !isLoggedIn
+            ? ""
+            : "grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)_270px]"
+        }`}
+      >
+        {!isAuthPage && isLoggedIn && (
+          <aside className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:block lg:space-y-4">
+            {menuItems.map((item) => {
+              const isActive = activePage === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => guardedGoTo(item.key)}
+                  className={`w-full rounded-[26px] border bg-white px-5 py-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                    isActive ? "border-pink-200 ring-1 ring-pink-100" : "border-slate-200"
+                  }`}
+                >
+                  <div className={`text-xl font-black sm:text-2xl ${isActive ? "text-pink-500" : "text-slate-900"}`}>
+                    {item.label}
+                  </div>
+                  <div className="mt-1 text-sm font-medium text-slate-500">{item.desc}</div>
+                </button>
+              );
+            })}
+          </aside>
+        )}
+
+        <section className="space-y-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+                {pageMeta[activePage]?.title || "FAN CLUB"}
+              </h1>
+              <p className="mt-1 text-base font-medium text-slate-500 sm:text-lg">
+                {pageMeta[activePage]?.desc || "ファンクラブページです"}
+              </p>
+            </div>
+
+            {!isAuthPage && activePage === "digital-card" && isLoggedIn && (
+              <button className="hidden rounded-full border border-pink-300 bg-white px-6 py-3 text-lg font-bold text-pink-500 sm:block">
+                SNSでシェア
+              </button>
+            )}
+          </div>
+
+          {renderMainContent()}
+        </section>
+
+        {!isAuthPage && isLoggedIn && (
+          <aside>
+            <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-3xl font-black text-slate-900 lg:text-4xl">あなたのステータス</h2>
+
+              <div className="mt-6 border-t border-slate-100 pt-6">
+                <div className="text-lg font-semibold text-slate-500">現在のランク</div>
+                <div className="mt-3 text-4xl font-black">{renderRank(statusInfo.currentRank)}</div>
+                <div className="mt-2 inline-block rounded-full bg-violet-100 px-3 py-1 text-sm font-bold text-violet-500">
+                  {statusInfo.yearsLabel}
+                </div>
               </div>
-            </aside>
-          </main>
-        </div>`;
-    }
 
-    function render() {
-      const app = document.getElementById("app");
-      if (!state.isLoggedIn) {
-        app.innerHTML = `<div class="min-h-screen bg-[#f7f7fb] text-slate-900"><header class="border-b border-slate-200 bg-white/95 backdrop-blur"><div class="mx-auto flex max-w-[1600px] items-center justify-between px-5 py-4 lg:px-8"><button class="text-left"><div class="text-4xl font-black tracking-[0.22em] text-slate-900">FAN CLUB</div><div class="mt-1 text-sm font-semibold tracking-[0.2em] text-slate-500">OFFICIAL COMMUNITY</div></button><div class="flex items-center gap-3"><button data-action="goto-login" class="rounded-full border border-slate-200 bg-white px-5 py-3 text-lg font-bold text-slate-700">ログイン</button><button data-action="goto-register" class="rounded-full bg-violet-500 px-5 py-3 text-lg font-bold text-white">無料登録</button></div></div></header><main class="mx-auto max-w-[1600px] px-5 py-6 lg:px-8">${renderAuthPage(state.page)}</main></div>`;
-      } else {
-        app.innerHTML = renderLoggedInLayout();
-      }
-      attachEvents();
-    }
-
-    function attachEvents() {
-      document.querySelectorAll("[data-action]").forEach((el) => {
-        el.addEventListener("click", () => {
-          const action = el.getAttribute("data-action");
-          if (action === "goto-login") navigate(routes.login);
-          else if (action === "goto-register") navigate(routes.register);
-          else if (action === "goto-card") navigate(routes.card);
-          else if (action === "goto-profile") navigate(routes.profile);
-          else if (action === "goto-status") navigate(routes.status);
-          else if (action === "goto-notices") navigate(routes.notices);
-          else if (action === "goto-sns") navigate(routes.sns);
-          else if (action === "goto-notifications") navigate(routes.notifications);
-          else if (action === "submit-login") handleLogin();
-          else if (action === "submit-register") handleRegister();
-          else if (action === "logout") handleLogout();
-          else if (action === "edit-profile") { state.isEditingProfile = true; state.draftProfile = { ...state.profile }; render(); }
-          else if (action === "cancel-profile") { state.isEditingProfile = false; state.draftProfile = { ...state.profile }; state.saveMessage = ""; render(); }
-          else if (action === "save-profile") handleSaveProfile();
-        });
-      });
-
-      document.querySelectorAll("[data-field]").forEach((el) => {
-        const field = el.getAttribute("data-field");
-        el.addEventListener("input", (e) => {
-          const value = e.target.value;
-          if (field === "login-email") state.loginForm.email = value;
-          else if (field === "login-password") state.loginForm.password = value;
-          else if (field === "register-nickname") state.registerForm.nickname = value;
-          else if (field === "register-email") state.registerForm.email = value;
-          else if (field === "register-password") state.registerForm.password = value;
-          else if (field === "profile-nickname") state.draftProfile.nickname = value;
-          else if (field === "profile-email") state.draftProfile.email = value;
-          else if (field === "profile-bio") state.draftProfile.bio = value;
-        });
-      });
-    }
-
-    loadState();
-    render();
-  </script>
-</body>
-</html>
+              <div className="mt-
