@@ -62,3 +62,5 @@ onAuthStateChanged(auth, (user) => {
     console.log("未ログイン");
   }
 });
+
+testRegister();
