@@ -26,35 +26,43 @@ const auth = getAuth(app);
 
 console.log("Firebase Connected");
 
-// テスト用
-window.testRegister = async () => {
+window.registerUser = async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
   try {
     const user = await createUserWithEmailAndPassword(
       auth,
-      "test@test.com",
-      "123456"
+      email,
+      password
     );
 
     console.log("登録成功", user);
+    alert("会員登録成功！");
   } catch (error) {
     console.log(error);
+    alert(error.message);
   }
 };
 
-window.testLogin = async () => {
+window.loginUser = async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
   try {
     const user = await signInWithEmailAndPassword(
       auth,
-      "test@test.com",
-      "123456"
+      email,
+      password
     );
 
     console.log("ログイン成功", user);
+    alert("ログイン成功！");
   } catch (error) {
     console.log(error);
+    alert(error.message);
   }
 };
-
 onAuthStateChanged(auth, (user) => {
   if (user) {
     console.log("ログイン中", user.email);
@@ -63,4 +71,4 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-testRegister();
+window.auth = auth;
