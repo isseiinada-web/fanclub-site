@@ -120,16 +120,50 @@
 
   </div>
 
-<div style="position:fixed;bottom:20px;right:20px;display:flex;gap:10px;z-index:999999;">
-  <button onclick="testRegister()"
-    style="padding:12px 18px;border:none;border-radius:12px;background:#8b5cf6;color:white;font-weight:bold;cursor:pointer;">
-    テスト登録
+<div id="authBox"
+style="
+position:fixed;
+bottom:20px;
+right:20px;
+background:white;
+padding:20px;
+border-radius:16px;
+box-shadow:0 10px 30px rgba(0,0,0,0.15);
+display:flex;
+flex-direction:column;
+gap:10px;
+width:260px;
+z-index:999999;
+">
+
+  <input
+    id="email"
+    type="email"
+    placeholder="メールアドレス"
+    style="padding:12px;border:1px solid #ddd;border-radius:10px;"
+  />
+
+  <input
+    id="password"
+    type="password"
+    placeholder="パスワード"
+    style="padding:12px;border:1px solid #ddd;border-radius:10px;"
+  />
+
+  <button
+    onclick="registerUser()"
+    style="padding:12px;background:#8b5cf6;color:white;border:none;border-radius:10px;font-weight:bold;cursor:pointer;"
+  >
+    会員登録
   </button>
 
-  <button onclick="testLogin()"
-    style="padding:12px 18px;border:none;border-radius:12px;background:#111827;color:white;font-weight:bold;cursor:pointer;">
-    テストログイン
+  <button
+    onclick="loginUser()"
+    style="padding:12px;background:#111827;color:white;border:none;border-radius:10px;font-weight:bold;cursor:pointer;"
+  >
+    ログイン
   </button>
+
 </div>
   
 <script type="module" src="app.js"></script>
