@@ -72,3 +72,17 @@ onAuthStateChanged(auth, (user) => {
 });
 
 window.auth = auth;
+
+const memberPage = document.getElementById("memberPage");
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    console.log("ログイン中", user.email);
+
+    memberPage.style.display = "flex";
+  } else {
+    console.log("未ログイン");
+
+    memberPage.style.display = "none";
+  }
+});
