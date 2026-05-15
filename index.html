@@ -168,38 +168,106 @@ z-index:999999;
   
 <script type="module" src="app.js"></script>
 
-<div style="position:fixed;top:20px;right:20px;background:white;padding:20px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.1);z-index:99999;width:260px;">
+<div id="loginPage"
+style="
+position:fixed;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+background:#f4f4f7;
+z-index:9999;
+">
 
-  <h3 style="margin-top:0;">Firebaseログイン</h3>
+  <div style="
+    width:380px;
+    background:white;
+    border-radius:28px;
+    padding:40px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.12);
+  ">
 
-  <input
-    id="email"
-    type="email"
-    placeholder="メールアドレス"
-    style="width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:10px;"
-  />
+    <h1 style="
+      margin-top:0;
+      font-size:32px;
+      margin-bottom:10px;
+      font-weight:900;
+      color:#111827;
+    ">
+      FAN CLUB
+    </h1>
 
-  <input
-    id="password"
-    type="password"
-    placeholder="パスワード"
-    style="width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:10px;"
-  />
+    <p style="
+      color:#64748b;
+      margin-bottom:30px;
+    ">
+      Official Community Login
+    </p>
 
-  <button
-    onclick="registerUser()"
-    style="width:100%;padding:12px;background:#8b5cf6;color:white;border:none;border-radius:10px;font-weight:bold;margin-bottom:10px;cursor:pointer;"
-  >
-    新規登録
-  </button>
+    <input
+      id="email"
+      type="email"
+      placeholder="メールアドレス"
+      style="
+        width:100%;
+        padding:16px;
+        border-radius:16px;
+        border:1px solid #e5e7eb;
+        margin-bottom:14px;
+        font-size:16px;
+      "
+    />
 
-  <button
-    onclick="loginUser()"
-    style="width:100%;padding:12px;background:#111827;color:white;border:none;border-radius:10px;font-weight:bold;cursor:pointer;"
-  >
-    ログイン
-  </button>
+    <input
+      id="password"
+      type="password"
+      placeholder="パスワード"
+      style="
+        width:100%;
+        padding:16px;
+        border-radius:16px;
+        border:1px solid #e5e7eb;
+        margin-bottom:20px;
+        font-size:16px;
+      "
+    />
 
+    <button
+      onclick="registerUser()"
+      style="
+        width:100%;
+        padding:16px;
+        border:none;
+        border-radius:16px;
+        background:#8b5cf6;
+        color:white;
+        font-weight:700;
+        font-size:16px;
+        margin-bottom:12px;
+        cursor:pointer;
+      "
+    >
+      新規登録
+    </button>
+
+    <button
+      onclick="loginUser()"
+      style="
+        width:100%;
+        padding:16px;
+        border:none;
+        border-radius:16px;
+        background:#111827;
+        color:white;
+        font-weight:700;
+        font-size:16px;
+        cursor:pointer;
+      "
+    >
+      ログイン
+    </button>
+
+  </div>
 </div>
   
 </body>
