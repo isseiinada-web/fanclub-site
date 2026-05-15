@@ -9,7 +9,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA43kFNncTrEKhedVSunTReZQVpZMTkHj0",
+  apiKey: "AIzaSyA43kFNncTrEKhedVSunTReZQvPzMTKhj0",
   authDomain: "brothers-fanclub.firebaseapp.com",
   projectId: "brothers-fanclub",
   storageBucket: "brothers-fanclub.firebasestorage.app",
