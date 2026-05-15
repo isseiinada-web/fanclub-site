@@ -2,244 +2,173 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fan Club</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
 
-  <!-- 会員ページ -->
-  <div id="memberPage" class="min-h-screen flex flex-col lg:flex-row gap-6 p-6" style="display:none;">
+  <!-- LOGIN PAGE -->
+  <main id="loginPage" class="login-page">
+    <section class="login-card">
+      <div class="login-logo">FC</div>
+      <p class="eyebrow">OFFICIAL COMMUNITY</p>
+      <h1>FAN CLUB</h1>
+      <p class="login-lead">会員専用ページへログイン</p>
 
-    <!-- 左 -->
-    <div class="w-full lg:w-[260px] space-y-5">
+      <label class="field-label">メールアドレス</label>
+      <input id="email" class="input" type="email" placeholder="example@email.com" autocomplete="email" />
 
-      <div class="bg-white rounded-3xl p-6 shadow-sm">
-        <h1 class="text-4xl font-black tracking-[0.3em] text-slate-900">FAN CLUB</h1>
-        <p class="text-slate-500 tracking-[0.25em] mt-2">OFFICIAL COMMUNITY</p>
+      <label class="field-label">パスワード</label>
+      <input id="password" class="input" type="password" placeholder="6文字以上" autocomplete="current-password" />
+
+      <button class="primary-btn" onclick="loginUser()">ログイン</button>
+      <button class="secondary-btn" onclick="registerUser()">新規会員登録</button>
+
+      <button class="text-btn" onclick="resetPassword()">パスワードを忘れた方</button>
+
+      <p id="authMessage" class="auth-message"></p>
+    </section>
+  </main>
+
+  <!-- MEMBER PAGE -->
+  <main id="memberPage" class="member-page hidden">
+
+    <!-- Header -->
+    <header class="top-header">
+      <div>
+        <h1>FAN CLUB</h1>
+        <p>OFFICIAL COMMUNITY</p>
       </div>
 
-      <div class="bg-white rounded-3xl p-6 shadow-sm">
-        <h2 class="text-4xl font-bold">会員情報</h2>
-        <p class="text-slate-500 mt-2">登録情報の確認・編集</p>
+      <div class="header-actions">
+        <button class="notification-btn">🔔<span>2</span></button>
+        <button class="mypage-btn">マイページ<br><small id="headerNumber">No.000001</small></button>
+        <button class="logout-btn" onclick="logoutUser()">ログアウト</button>
       </div>
+    </header>
 
-      <div class="bg-white rounded-3xl p-6 shadow-sm">
-        <h2 class="text-4xl font-bold">ステータス</h2>
-        <p class="text-slate-500 mt-2">ランク・継続期間を確認</p>
-      </div>
+    <div class="layout">
 
-      <div class="bg-white rounded-3xl p-6 shadow-sm">
-        <h2 class="text-4xl font-bold">お知らせ</h2>
-        <p class="text-slate-500 mt-2">最新情報をチェック</p>
-      </div>
-
-    </div>
-
-    <!-- 中央 -->
-    <div class="flex-1">
-
-      <div class="card-bg rounded-[40px] text-white p-10 overflow-hidden relative">
-
-        <p class="tracking-[0.4em] text-slate-300">OFFICIAL COMMUNITY</p>
-
-        <div class="grid lg:grid-cols-2 gap-10 items-center mt-5">
-
-          <div>
-            <h2 class="text-7xl font-black leading-none bg-gradient-to-b from-violet-300 to-white bg-clip-text text-transparent">
-              DIGITAL<br/>MEMBER<br/>CARD
-            </h2>
-
-            <div class="mt-12">
-              <p id="nicknameText" class="text-5xl font-black">User</p>
-
-              <div class="mt-10">
-                <p class="tracking-[0.3em] text-slate-400">MEMBER NO.</p>
-                <p id="memberNumber" class="text-8xl font-black mt-3">000001</p>
-              </div>
-
-              <p id="sinceText" class="mt-8 text-2xl tracking-[0.2em]">SINCE 2026.05.14</p>
-            </div>
-          </div>
-
-          <div class="flex flex-col items-center justify-center">
-
-            <img
-              class="profile-image"
-              src="https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1200&auto=format&fit=crop"
-              alt="profile"
-            />
-
-            <div class="mt-8 flex flex-col gap-4 w-full max-w-[220px]">
-
-              <div id="rankText" class="border border-violet-400 rounded-full py-4 text-center text-3xl font-bold bg-white/5 backdrop-blur">
-                村人
-              </div>
-
-              <div id="periodText" class="border border-slate-600 rounded-full py-4 text-center text-3xl font-bold bg-white/5 backdrop-blur">
-                1年目
-              </div>
-
-            </div>
-
-          </div>
-
+      <!-- Side Menu -->
+      <aside class="side-menu">
+        <div class="side-card logo-card">
+          <h2>FAN CLUB</h2>
+          <p>OFFICIAL COMMUNITY</p>
         </div>
 
-      </div>
-
-    </div>
-
-    <!-- 右 -->
-    <div class="w-full lg:w-[320px]">
-
-      <div class="bg-white rounded-[40px] p-8 shadow-sm">
-
-        <h2 class="text-5xl font-black text-slate-900">ステータス</h2>
-
-        <div class="mt-10 border-b pb-8">
-          <p class="text-slate-500 text-2xl">現在のランク</p>
-          <p id="statusRank" class="text-6xl font-black mt-3">村人</p>
-        </div>
-
-        <div class="mt-8 border-b pb-8">
-          <p class="text-slate-500 text-2xl">会員番号</p>
-          <p id="statusNumber" class="text-5xl font-black mt-3">No.000001</p>
-        </div>
-
-        <div class="mt-8">
-          <p class="text-slate-500 text-2xl">次のランクまで</p>
-          <p id="nextRankText" class="text-6xl font-black mt-3">あと3ヶ月</p>
-        </div>
-
-        <button
-          onclick="logoutUser()"
-          class="w-full mt-10 border-2 border-violet-400 text-violet-500 rounded-full py-5 text-3xl font-bold hover:bg-violet-500 hover:text-white transition"
-        >
-          ログアウト
+        <button class="menu-card active" onclick="showPanel('profile')">
+          <strong>会員情報</strong>
+          <span>登録情報の確認・編集</span>
         </button>
 
-      </div>
+        <button class="menu-card" onclick="showPanel('status')">
+          <strong>ステータス</strong>
+          <span>ランク・継続期間を確認</span>
+        </button>
+
+        <button class="menu-card" onclick="showPanel('notices')">
+          <strong>お知らせ</strong>
+          <span>最新情報をチェック</span>
+        </button>
+
+        <button class="menu-card" onclick="showPanel('sns')">
+          <strong>SNS連携</strong>
+          <span>今後追加予定</span>
+        </button>
+      </aside>
+
+      <!-- Main Card -->
+      <section class="main-area">
+        <div class="member-card">
+          <div class="card-bg-grid"></div>
+          <div class="card-content">
+            <p class="card-eyebrow">OFFICIAL COMMUNITY</p>
+
+            <div class="card-grid">
+              <div class="card-left">
+                <h2>DIGITAL<br>MEMBER<br>CARD</h2>
+                <p id="cardName" class="member-name">isseiinada</p>
+
+                <div class="member-number-block">
+                  <span>MEMBER NO.</span>
+                  <strong id="cardNumber">000001</strong>
+                </div>
+
+                <p id="sinceText" class="since-text">SINCE 2026.05.14</p>
+                <p id="fanclubId" class="fanclub-id">FC-000001</p>
+              </div>
+
+              <div class="card-right">
+                <div class="avatar-ring">
+                  <img id="profileImage" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1200&auto=format&fit=crop" alt="profile" />
+                </div>
+
+                <div class="rank-pill" id="cardRank">村人</div>
+                <div class="year-pill" id="cardYear">1年目</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail Panels -->
+        <div class="panel-wrap">
+          <section id="panel-profile" class="content-panel active-panel">
+            <h3>会員情報</h3>
+            <p>登録メール：<span id="profileEmail">-</span></p>
+            <p>ニックネーム：<span id="profileName">isseiinada</span></p>
+            <p>会員番号：<span id="profileNumber">No.000001</span></p>
+          </section>
+
+          <section id="panel-status" class="content-panel">
+            <h3>ステータス</h3>
+            <p>現在のランク：<span id="statusRankInline">村人</span></p>
+            <p>継続期間：<span id="statusYearInline">1年目</span></p>
+            <p>次のランクまで：<span id="statusNextInline">あと3ヶ月</span></p>
+          </section>
+
+          <section id="panel-notices" class="content-panel">
+            <h3>お知らせ</h3>
+            <div class="notice-item">🎉 FAN CLUBへようこそ</div>
+            <div class="notice-item">📌 会員証機能を公開しました</div>
+            <div class="notice-item">🚀 今後SNS連携・画像変更機能を追加予定です</div>
+          </section>
+
+          <section id="panel-sns" class="content-panel">
+            <h3>SNS連携</h3>
+            <p>Instagram / X / YouTube 連携機能を今後追加予定です。</p>
+          </section>
+        </div>
+      </section>
+
+      <!-- Status Sidebar -->
+      <aside class="status-sidebar">
+        <div class="status-card">
+          <h2>ステータス</h2>
+
+          <div class="status-row">
+            <span>現在のランク</span>
+            <strong id="sideRank">村人</strong>
+            <em id="sideYearBadge">1年目</em>
+          </div>
+
+          <div class="status-row">
+            <span>会員番号</span>
+            <strong id="sideNumber">No.000001</strong>
+          </div>
+
+          <div class="status-row">
+            <span>次のランクまで</span>
+            <strong id="sideNext">あと3ヶ月</strong>
+          </div>
+
+          <button class="rank-about" onclick="showPanel('status')">ランクについて</button>
+        </div>
+      </aside>
 
     </div>
-
-  </div>
-
-  <!-- ログイン -->
-  <div
-    id="loginPage"
-    style="
-      position:fixed;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:#f4f4f7;
-      z-index:9999;
-    "
-  >
-
-    <div
-      style="
-        width:380px;
-        background:white;
-        border-radius:28px;
-        padding:40px;
-        box-shadow:0 20px 60px rgba(0,0,0,0.12);
-      "
-    >
-
-      <h1
-        style="
-          font-size:32px;
-          font-weight:900;
-          color:#111827;
-          margin-bottom:10px;
-        "
-      >
-        FAN CLUB
-      </h1>
-
-      <p
-        style="
-          color:#64748b;
-          margin-bottom:30px;
-        "
-      >
-        Official Community Login
-      </p>
-
-      <input
-        id="email"
-        type="email"
-        placeholder="メールアドレス"
-        style="
-          width:100%;
-          padding:16px;
-          border-radius:16px;
-          border:1px solid #e5e7eb;
-          margin-bottom:14px;
-          font-size:16px;
-        "
-      />
-
-      <input
-        id="password"
-        type="password"
-        placeholder="パスワード"
-        style="
-          width:100%;
-          padding:16px;
-          border-radius:16px;
-          border:1px solid #e5e7eb;
-          margin-bottom:20px;
-          font-size:16px;
-        "
-      />
-
-      <button
-        onclick="registerUser()"
-        style="
-          width:100%;
-          padding:16px;
-          border:none;
-          border-radius:16px;
-          background:#8b5cf6;
-          color:white;
-          font-weight:700;
-          font-size:16px;
-          margin-bottom:12px;
-          cursor:pointer;
-        "
-      >
-        新規登録
-      </button>
-
-      <button
-        onclick="loginUser()"
-        style="
-          width:100%;
-          padding:16px;
-          border:none;
-          border-radius:16px;
-          background:#111827;
-          color:white;
-          font-weight:700;
-          font-size:16px;
-          cursor:pointer;
-        "
-      >
-        ログイン
-      </button>
-
-    </div>
-
-  </div>
+  </main>
 
   <script type="module" src="app.js"></script>
-
 </body>
 </html>
