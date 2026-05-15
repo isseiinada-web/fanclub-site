@@ -9,7 +9,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA43kFNncTrEKhedVSunTReZQvPzMTKhj0",
+  apiKey: "AIzaSyA43kfNncTrEKhedVSunTReZQvPzMTkHj0",
   authDomain: "brothers-fanclub.firebaseapp.com",
   projectId: "brothers-fanclub",
   storageBucket: "brothers-fanclub.firebasestorage.app",
@@ -17,6 +17,7 @@ const firebaseConfig = {
   appId: "1:818864836252:web:a5fe021cb0a97c6877e759",
   measurementId: "G-KBM70KG1DH"
 };
+
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
