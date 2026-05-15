@@ -18,7 +18,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA43kfNncTrEKhedVSunTReZQvPzMTKhj0",
+  apiKey: "AIzaSyA43kfNncTrEKhedVSunTReZQvPzMTkHj0",
   authDomain: "brothers-fanclub.firebaseapp.com",
   projectId: "brothers-fanclub",
   storageBucket: "brothers-fanclub.firebasestorage.app",
