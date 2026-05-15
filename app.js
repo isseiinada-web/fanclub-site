@@ -8,6 +8,11 @@ import {
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Firebase設定
 const firebaseConfig = {
@@ -23,6 +28,7 @@ const firebaseConfig = {
 // 初期化
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 console.log("Firebase Connected");
 
@@ -38,6 +44,17 @@ window.registerUser = async () => {
     );
 
     console.log("登録成功", user);
+    await setDoc(doc(db, "users", user.user.uid), {
+
+  email: email,
+
+  memberNumber: Math.floor(Math.random() * 999999),
+
+  rank: "村人",
+
+  createdAt: new Date().toISOString()
+
+});
     alert("会員登録成功！");
   } catch (error) {
     console.log(error);
