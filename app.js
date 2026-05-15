@@ -59,28 +59,24 @@ function getMembershipInfo(createdAt) {
   const months = Math.max(0, (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth());
   const years = Math.floor(months / 12) + 1;
 
-  let rank = "村人";
-  let next = "あと3ヶ月";
-
   if (months >= 36) {
-    rank = "国民";
-    next = "最高ランク";
-  } else if (months >= 24) {
-    rank = "住民";
-    next = `あと${36 - months}ヶ月`;
-  } else if (months >= 12) {
-    rank = "市民";
-    next = `あと${24 - months}ヶ月`;
-  } else {
-    rank = "村人";
-    next = `あと${Math.max(1, 12 - months)}ヶ月`;
+    return { rank: "国民", yearsText: `${years}年目`, next: "最高ランク" };
   }
 
-  return {
-    rank,
-    yearsText: `${years}年目`,
-    next
-  };
+  if (months >= 24) {
+    return { rank: "住民", yearsText: `${years}年目`, next: `あと${36 - months}ヶ月` };
+  }
+
+  if (months >= 12) {
+    return { rank: "市民", yearsText: `${years}年目`, next: `あと${24 - months}ヶ月` };
+  }
+
+  return { rank: "村人", yearsText: `${years}年目`, next: `あと${Math.max(1, 12 - months)}ヶ月` };
+}
+
+function safeSet(id, value) {
+  const element = $(id);
+  if (element) element.textContent = value;
 }
 
 function updateUI(user, profile) {
@@ -89,28 +85,24 @@ function updateUI(user, profile) {
   const membership = getMembershipInfo(createdAt);
   const nickname = profile.nickname || user.email?.split("@")[0] || "member";
 
-  $("cardName").textContent = nickname;
-  $("memberNumber").textContent = memberNumber;
-  $("cardNumber").textContent = memberNumber;
-  $("fanclubId").textContent = `FC-${memberNumber}`;
-  $("sinceText").textContent = `SINCE ${formatDate(createdAt)}`;
+  safeSet("cardName", nickname);
+  safeSet("cardNumber", memberNumber);
+  safeSet("fanClubId", `FAN CLUB ID　FC-${memberNumber}`);
+  safeSet("sinceDate", `SINCE ${formatDate(createdAt)}`);
 
-  $("cardRank").textContent = membership.rank;
-  $("cardYear").textContent = membership.yearsText;
+  safeSet("cardRank", membership.rank);
+  safeSet("cardYear", membership.yearsText);
 
-  $("sideRank").textContent = membership.rank;
-  $("sideNumber").textContent = `No.${memberNumber}`;
-  $("sideNext").textContent = membership.next;
-  $("sideYearBadge").textContent = membership.yearsText;
-  $("headerNumber").textContent = `No.${memberNumber}`;
+  safeSet("sideRank", membership.rank);
+  safeSet("sideMemberNo", `No.${memberNumber}`);
+  safeSet("sideNext", membership.next);
+  safeSet("sideYear", membership.yearsText);
+  safeSet("topMemberNo", `No.${memberNumber}`);
 
-  $("profileEmail").textContent = user.email || "-";
-  $("profileName").textContent = nickname;
-  $("profileNumber").textContent = `No.${memberNumber}`;
-
-  $("statusRankInline").textContent = membership.rank;
-  $("statusYearInline").textContent = membership.yearsText;
-  $("statusNextInline").textContent = membership.next;
+  safeSet("profileEmail", user.email || "-");
+  safeSet("profileNickname", nickname);
+  safeSet("profileMemberNo", `No.${memberNumber}`);
+  safeSet("profileCreatedAt", formatDate(createdAt));
 }
 
 async function ensureUserProfile(user) {
@@ -123,6 +115,7 @@ async function ensureUserProfile(user) {
 
   const createdAt = new Date().toISOString();
   const memberNumber = Math.floor(Math.random() * 900000) + 1;
+
   const profile = {
     uid: user.uid,
     email: user.email,
@@ -198,19 +191,18 @@ window.resetPassword = async () => {
 };
 
 window.showPanel = (name) => {
-  document.querySelectorAll(".content-panel").forEach((panel) => {
+  document.querySelectorAll(".info-panel").forEach((panel) => {
     panel.classList.remove("active-panel");
   });
 
-  document.querySelectorAll(".menu-card").forEach((button) => {
+  document.querySelectorAll(".nav-card").forEach((button) => {
     button.classList.remove("active");
   });
 
   const panel = $(`panel-${name}`);
   if (panel) panel.classList.add("active-panel");
 
-  const buttons = Array.from(document.querySelectorAll(".menu-card"));
-  const target = buttons.find((button) => button.getAttribute("onclick")?.includes(name));
+  const target = document.querySelector(`[data-panel="${name}"]`);
   if (target) target.classList.add("active");
 };
 
@@ -218,7 +210,6 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     loginPage.classList.add("hidden");
     memberPage.classList.remove("hidden");
-    memberPage.style.display = "block";
 
     const profile = await ensureUserProfile(user);
     updateUI(user, profile);
