@@ -1,18 +1,16 @@
-body {
-  margin: 0;
-  font-family: sans-serif;
-  background: #f4f4f7;
+body{
+  margin:0;
+  background:#f4f4f7;
+  font-family:sans-serif;
 }
 
-.card-bg {
-  background: linear-gradient(135deg, #020617 0%, #050b1d 60%, #0f172a 100%);
+.card-bg{
+  background:#111827;
 }
 
-.profile-image {
-  width: 260px;
-  height: 260px;
-  border-radius: 9999px;
-  object-fit: cover;
-  border: 5px solid #dbeafe;
-  background: #111827;
+.profile-image{
+  width:260px;
+  height:260px;
+  border-radius:9999px;
+  object-fit:cover;
 }
