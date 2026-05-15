@@ -76,13 +76,29 @@ window.auth = auth;
 const memberPage = document.getElementById("memberPage");
 
 onAuthStateChanged(auth, (user) => {
+
+  const loginPage = document.getElementById("loginPage");
+
   if (user) {
+
     console.log("ログイン中", user.email);
 
     memberPage.style.display = "flex";
+
+    if (loginPage) {
+      loginPage.style.display = "none";
+    }
+
   } else {
+
     console.log("未ログイン");
 
     memberPage.style.display = "none";
+
+    if (loginPage) {
+      loginPage.style.display = "flex";
+    }
+
   }
+
 });
