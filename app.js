@@ -102,3 +102,20 @@ onAuthStateChanged(auth, (user) => {
   }
 
 });
+window.logoutUser = async () => {
+
+  try {
+
+    await signOut(auth);
+
+    alert("ログアウトしました");
+
+  } catch (error) {
+
+    console.log(error);
+
+    alert(error.message);
+
+  }
+
+};
