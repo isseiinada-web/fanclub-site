@@ -40,7 +40,6 @@ const firebaseConfig = {
   appId: "1:818864836252:web:a5fe021cb0a97c6877e759",
   measurementId: "G-KBM70KG1DH"
 };
-
 const ADMIN_EMAIL = "isseiren11220425@gmail.com";
 
 const app = initializeApp(firebaseConfig);
@@ -180,9 +179,18 @@ function updateUI(profile, user) {
 
   safeSet("rankText", membership.rank);
   safeSet("sideYear", membership.yearLabel);
+  if (profile.role === "admin") {
+  safeSet("sideBigNumber", "ADMIN");
+  safeSet("topMemberNo", "ADMIN");
+  safeSet("profileMemberNo", "ADMIN");
+} else {
   safeSet("sideBigNumber", `No.${number}`);
-  safeSet("nextRank", membership.nextText);
   safeSet("topMemberNo", `No.${number}`);
+  safeSet("profileMemberNo", `No.${number}`);
+}
+
+safeSet("nextRank", membership.nextText);
+
 
   safeSet("profileEmail", user?.email || "-");
   safeSet("profileNickname", nickname);
