@@ -103,6 +103,8 @@
     class="member-page hidden"
   >
 
+    <!-- TOP -->
+
     <header class="topbar">
 
       <div class="top-logo">
@@ -146,6 +148,8 @@
 
     </header>
 
+    <!-- DASHBOARD -->
+
     <section class="dashboard">
 
       <!-- LEFT -->
@@ -166,6 +170,8 @@
 
         </div>
 
+        <!-- CARD -->
+
         <button
           class="nav-card active"
           data-panel="card"
@@ -182,6 +188,8 @@
 
         </button>
 
+        <!-- PROFILE -->
+
         <button
           class="nav-card"
           data-panel="profile"
@@ -194,6 +202,60 @@
 
           <span>
             プロフィール編集
+          </span>
+
+        </button>
+
+        <!-- STATUS -->
+
+        <button
+          class="nav-card"
+          data-panel="status"
+          onclick="showPanel('status')"
+        >
+
+          <strong>
+            ステータス
+          </strong>
+
+          <span>
+            ランク・継続期間
+          </span>
+
+        </button>
+
+        <!-- NEWS -->
+
+        <button
+          class="nav-card"
+          data-panel="news"
+          onclick="showPanel('news')"
+        >
+
+          <strong>
+            お知らせ
+          </strong>
+
+          <span>
+            最新情報を確認
+          </span>
+
+        </button>
+
+        <!-- SNS -->
+
+        <button
+          class="nav-card"
+          data-panel="sns"
+          onclick="showPanel('sns')"
+        >
+
+          <strong>
+            SNS連携
+          </strong>
+
+          <span>
+            今後追加予定
           </span>
 
         </button>
@@ -225,7 +287,10 @@
                 CARD
               </h1>
 
-              <h2 id="memberName">
+              <h2
+                id="memberName"
+                class="member-name"
+              >
                 member
               </h2>
 
@@ -244,10 +309,13 @@
                 class="since"
                 id="registerDate"
               >
-                SINCE 2026.05.16
+                2026.05.16
               </p>
 
-              <p class="fan-id">
+              <p
+                class="fan-id"
+                id="fanClubId"
+              >
                 FAN CLUB ID
               </p>
 
@@ -312,7 +380,7 @@
               placeholder="ニックネーム"
             />
 
-            <!-- 画像アップロード -->
+            <!-- IMAGE -->
 
             <div class="profile-upload">
 
@@ -334,6 +402,101 @@
             >
               保存する
             </button>
+
+          </div>
+
+        </section>
+
+        <!-- STATUS -->
+
+        <section
+          id="panel-status"
+          class="screen-panel"
+        >
+
+          <div class="settings-card">
+
+            <h3>
+              ステータス
+            </h3>
+
+            <p class="muted">
+              現在のランク情報
+            </p>
+
+            <div class="status-info">
+
+              <h2 id="statusRank">
+                村人
+              </h2>
+
+              <p id="statusNext">
+                次のランクまであと3ヶ月
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- NEWS -->
+
+        <section
+          id="panel-news"
+          class="screen-panel"
+        >
+
+          <div class="settings-card">
+
+            <h3>
+              お知らせ
+            </h3>
+
+            <p class="muted">
+              最新情報
+            </p>
+
+            <div class="news-item">
+              新機能を準備中です。
+            </div>
+
+            <div class="news-item">
+              プロフィール画像アップロード対応。
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- SNS -->
+
+        <section
+          id="panel-sns"
+          class="screen-panel"
+        >
+
+          <div class="settings-card">
+
+            <h3>
+              SNS連携
+            </h3>
+
+            <p class="muted">
+              今後追加予定
+            </p>
+
+            <div class="news-item">
+              X連携
+            </div>
+
+            <div class="news-item">
+              Instagram連携
+            </div>
+
+            <div class="news-item">
+              Discord連携
+            </div>
 
           </div>
 
@@ -362,6 +525,18 @@
           <span id="nextRank">
             あと3ヶ月
           </span>
+
+        </div>
+
+        <div class="status-block">
+
+          <p>
+            会員番号
+          </p>
+
+          <h3 id="sideBigNumber">
+            No.000001
+          </h3>
 
         </div>
 
