@@ -342,3 +342,6 @@ onAuthStateChanged(auth, async (user) => {
     memberPage.classList.add("hidden");
   }
 });
+window.resetPassword = async () => {
+  alert("パスワード再設定機能は後で追加予定です");
+};
