@@ -6,7 +6,15 @@ import {
   signInWithEmailAndPassword,
   onAuthStateChanged,
   signOut,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA43kfNncTrEKhedVSunTReZQvPzMTkHj0",
@@ -18,60 +26,112 @@ const firebaseConfig = {
   measurementId: "G-KBM70KG1DH"
 };
 
-
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
 
-const loginPage = document.getElementById("loginPage");
-const memberPage = document.getElementById("memberPage");
+const storage = getStorage(app);
 
-const authMessage = document.getElementById("authMessage");
+const loginPage =
+  document.getElementById("loginPage");
 
-const memberName = document.getElementById("memberName");
-const memberNumber = document.getElementById("memberNumber");
-const registerDate = document.getElementById("registerDate");
-const memberRank = document.getElementById("memberRank");
-const nextRank = document.getElementById("nextRank");
-const yearLabel = document.getElementById("yearLabel");
-const avatarImage = document.getElementById("avatarImage");
+const memberPage =
+  document.getElementById("memberPage");
+
+const authMessage =
+  document.getElementById("authMessage");
+
+const memberName =
+  document.getElementById("memberName");
+
+const memberNumber =
+  document.getElementById("memberNumber");
+
+const registerDate =
+  document.getElementById("registerDate");
+
+const memberRank =
+  document.getElementById("memberRank");
+
+const nextRank =
+  document.getElementById("nextRank");
+
+const yearLabel =
+  document.getElementById("yearLabel");
+
+const avatarImage =
+  document.getElementById("avatarImage");
 
 function generateMemberNumber() {
-  const count =
-    Number(localStorage.getItem("fan-club-demo-member-count") || "0") + 1;
 
-  localStorage.setItem("fan-club-demo-member-count", count);
+  const count =
+    Number(
+      localStorage.getItem(
+        "fan-club-demo-member-count"
+      ) || "0"
+    ) + 1;
+
+  localStorage.setItem(
+    "fan-club-demo-member-count",
+    count
+  );
 
   return String(count).padStart(6, "0");
+
 }
 
 function updateUI(profile) {
-  memberName.textContent = profile.nickname;
-  memberNumber.textContent = profile.memberNumber;
-  registerDate.textContent = profile.registerDate;
-  memberRank.textContent = profile.rank;
-  nextRank.textContent = profile.nextRank;
-  yearLabel.textContent = profile.yearLabel;
 
-  avatarImage.src = profile.avatarUrl;
+  memberName.textContent =
+    profile.nickname;
+
+  memberNumber.textContent =
+    profile.memberNumber;
+
+  registerDate.textContent =
+    profile.registerDate;
+
+  memberRank.textContent =
+    profile.rank;
+
+  nextRank.textContent =
+    profile.nextRank;
+
+  yearLabel.textContent =
+    profile.yearLabel;
+
+  avatarImage.src =
+    profile.avatarUrl;
+
 }
 
 window.registerUser = async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+
+  const email =
+    document.getElementById("email").value;
+
+  const password =
+    document.getElementById("password").value;
 
   if (password.length < 6) {
+
     alert("パスワードは6文字以上です");
+
     return;
+
   }
 
   try {
-    const result = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
 
-    const today = new Date();
+    const result =
+      await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+    const today =
+      new Date();
 
     const dateString =
       `${today.getFullYear()}.${String(
@@ -81,15 +141,28 @@ window.registerUser = async () => {
       ).padStart(2, "0")}`;
 
     const profile = {
-      nickname: email.split("@")[0],
-      memberNumber: generateMemberNumber(),
-      registerDate: dateString,
 
-      avatarUrl: "./villager-icon.jpg",
+      nickname:
+        email.split("@")[0],
 
-      rank: "村人",
-      nextRank: "あと3ヶ月",
-      yearLabel: "1年目",
+      memberNumber:
+        generateMemberNumber(),
+
+      registerDate:
+        dateString,
+
+      avatarUrl:
+        "./villager-icon.jpg",
+
+      rank:
+        "村人",
+
+      nextRank:
+        "あと3ヶ月",
+
+      yearLabel:
+        "1年目",
+
     };
 
     localStorage.setItem(
@@ -98,84 +171,293 @@ window.registerUser = async () => {
     );
 
     alert("会員登録完了");
+
   } catch (error) {
+
     alert(error.message);
+
   }
+
 };
 
 window.loginUser = async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+
+  const email =
+    document.getElementById("email").value;
+
+  const password =
+    document.getElementById("password").value;
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
 
-    authMessage.textContent = "ログイン成功";
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    authMessage.textContent =
+      "ログイン成功";
+
   } catch (error) {
+
     alert(error.message);
+
   }
+
 };
 
 window.logoutUser = async () => {
+
   await signOut(auth);
+
 };
 
-window.resetPassword = () => {
-  alert("今後追加予定");
+window.resetPassword = async () => {
+
+  const email =
+    document.getElementById("email").value;
+
+  if (!email) {
+
+    alert(
+      "メールアドレスを入力してください"
+    );
+
+    return;
+
+  }
+
+  try {
+
+    await sendPasswordResetEmail(
+      auth,
+      email
+    );
+
+    alert(
+      "再設定メールを送信しました"
+    );
+
+  } catch (error) {
+
+    alert(error.message);
+
+  }
+
+};
+
+window.saveProfile = async () => {
+
+  const user =
+    auth.currentUser;
+
+  if (!user) return;
+
+  const nickname =
+    document.getElementById(
+      "nicknameInput"
+    ).value;
+
+  const file =
+    document.getElementById(
+      "avatarUpload"
+    ).files[0];
+
+  let avatarUrl =
+    "./villager-icon.jpg";
+
+  try {
+
+    if (file) {
+
+      const storageRef = ref(
+        storage,
+        `avatars/${user.uid}`
+      );
+
+      await uploadBytes(
+        storageRef,
+        file
+      );
+
+      avatarUrl =
+        await getDownloadURL(
+          storageRef
+        );
+
+    } else {
+
+      const current =
+        JSON.parse(
+          localStorage.getItem(
+            user.uid
+          )
+        );
+
+      avatarUrl =
+        current.avatarUrl;
+
+    }
+
+    const current =
+      JSON.parse(
+        localStorage.getItem(
+          user.uid
+        )
+      );
+
+    const updated = {
+
+      ...current,
+
+      nickname,
+
+      avatarUrl
+
+    };
+
+    localStorage.setItem(
+      user.uid,
+      JSON.stringify(updated)
+    );
+
+    updateUI(updated);
+
+    alert(
+      "プロフィール保存完了"
+    );
+
+  } catch (error) {
+
+    alert(error.message);
+
+  }
+
 };
 
 window.showPanel = (name) => {
-  document.querySelectorAll(".screen-panel").forEach((panel) => {
-    panel.classList.remove("active-panel");
-  });
 
-  document.querySelectorAll(".nav-card").forEach((button) => {
-    button.classList.remove("active");
-  });
+  document
+    .querySelectorAll(
+      ".screen-panel"
+    )
+    .forEach((panel) => {
 
-  const panel = document.getElementById(`panel-${name}`);
+      panel.classList.remove(
+        "active-panel"
+      );
+
+    });
+
+  document
+    .querySelectorAll(
+      ".nav-card"
+    )
+    .forEach((button) => {
+
+      button.classList.remove(
+        "active"
+      );
+
+    });
+
+  const panel =
+    document.getElementById(
+      `panel-${name}`
+    );
 
   if (panel) {
-    panel.classList.add("active-panel");
+
+    panel.classList.add(
+      "active-panel"
+    );
+
   }
 
-  const nav = document.querySelector(`[data-panel="${name}"]`);
+  const nav =
+    document.querySelector(
+      `[data-panel="${name}"]`
+    );
 
   if (nav) {
-    nav.classList.add("active");
+
+    nav.classList.add(
+      "active"
+    );
+
   }
+
 };
 
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    loginPage.classList.add("hidden");
-    memberPage.classList.remove("hidden");
+onAuthStateChanged(
+  auth,
+  async (user) => {
 
-    let profile =
-      JSON.parse(localStorage.getItem(user.uid));
+    if (user) {
 
-    if (!profile) {
-      profile = {
-        nickname: user.email.split("@")[0],
-        memberNumber: generateMemberNumber(),
-        registerDate: "2026.05.16",
-
-        avatarUrl: "./villager-icon.jpg",
-
-        rank: "村人",
-        nextRank: "あと3ヶ月",
-        yearLabel: "1年目",
-      };
-
-      localStorage.setItem(
-        user.uid,
-        JSON.stringify(profile)
+      loginPage.classList.add(
+        "hidden"
       );
+
+      memberPage.classList.remove(
+        "hidden"
+      );
+
+      let profile =
+        JSON.parse(
+          localStorage.getItem(
+            user.uid
+          )
+        );
+
+      if (!profile) {
+
+        profile = {
+
+          nickname:
+            user.email.split("@")[0],
+
+          memberNumber:
+            generateMemberNumber(),
+
+          registerDate:
+            "2026.05.16",
+
+          avatarUrl:
+            "./villager-icon.jpg",
+
+          rank:
+            "村人",
+
+          nextRank:
+            "あと3ヶ月",
+
+          yearLabel:
+            "1年目"
+
+        };
+
+        localStorage.setItem(
+          user.uid,
+          JSON.stringify(profile)
+        );
+
+      }
+
+      updateUI(profile);
+
+    } else {
+
+      loginPage.classList.remove(
+        "hidden"
+      );
+
+      memberPage.classList.add(
+        "hidden"
+      );
+
     }
 
-    updateUI(profile);
-  } else {
-    loginPage.classList.remove("hidden");
-    memberPage.classList.add("hidden");
   }
-});
+);
