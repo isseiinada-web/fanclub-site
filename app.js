@@ -10,7 +10,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 
-// Firebase設定
 const firebaseConfig = {
   apiKey: "AIzaSyA43kfNncTrEKhedVSunTReZQvPzMTkHj0",
   authDomain: "brothers-fanclub.firebaseapp.com",
@@ -22,14 +21,11 @@ const firebaseConfig = {
 };
 
 
-
-// 初期化
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
 
-// DOM
 const loginPage = document.getElementById("loginPage");
 
 const memberPage = document.getElementById("memberPage");
@@ -37,17 +33,13 @@ const memberPage = document.getElementById("memberPage");
 const authMessage = document.getElementById("authMessage");
 
 
-// 会員番号生成
 function generateMemberNumber() {
 
-  return Math.floor(
-    100000 + Math.random() * 900000
-  );
+  return Math.floor(100000 + Math.random() * 900000);
 
 }
 
 
-// 会員ページ表示
 function showMemberPage(user) {
 
   const number = generateMemberNumber();
@@ -61,6 +53,7 @@ function showMemberPage(user) {
   const dd = String(today.getDate()).padStart(2, "0");
 
   const dateText = `${yyyy}.${mm}.${dd}`;
+
 
   loginPage.classList.add("hidden");
 
@@ -88,14 +81,11 @@ function showMemberPage(user) {
 }
 
 
-// 新規登録
 window.registerUser = async () => {
 
-  const email =
-    document.getElementById("email").value;
+  const email = document.getElementById("email").value;
 
-  const password =
-    document.getElementById("password").value;
+  const password = document.getElementById("password").value;
 
   try {
 
@@ -114,14 +104,11 @@ window.registerUser = async () => {
 };
 
 
-// ログイン
 window.loginUser = async () => {
 
-  const email =
-    document.getElementById("email").value;
+  const email = document.getElementById("email").value;
 
-  const password =
-    document.getElementById("password").value;
+  const password = document.getElementById("password").value;
 
   try {
 
@@ -140,11 +127,9 @@ window.loginUser = async () => {
 };
 
 
-// パスワードリセット
 window.resetPassword = async () => {
 
-  const email =
-    document.getElementById("email").value;
+  const email = document.getElementById("email").value;
 
   if (!email) {
 
@@ -171,7 +156,6 @@ window.resetPassword = async () => {
 };
 
 
-// ログアウト
 window.logoutUser = async () => {
 
   await signOut(auth);
@@ -179,7 +163,6 @@ window.logoutUser = async () => {
 };
 
 
-// 状態監視
 onAuthStateChanged(auth, (user) => {
 
   if (user) {
