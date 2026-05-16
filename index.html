@@ -42,7 +42,7 @@
       <div class="top-actions">
         <button class="notify" type="button" onclick="showPanel('news')">
           🔔
-          <span>3</span>
+          <span id="noticeBadge">0</span>
         </button>
 
         <button class="mypage-mini" type="button" onclick="showPanel('profile')">
@@ -106,7 +106,7 @@
 
               <p class="small-title">MEMBER NO.</p>
               <div class="big-number" id="memberNumber">000001</div>
-              <p class="since" id="registerDate">SINCE 2026.05.16</p>
+              <p class="since" id="registerDate">SINCE 2026.05.17</p>
               <p class="fan-id" id="fanClubId">FAN CLUB ID　FC-000001</p>
             </div>
 
@@ -125,7 +125,7 @@
         <section id="panel-profile" class="screen-panel">
           <div class="settings-card">
             <h3>会員情報</h3>
-            <p class="muted">現在登録されている会員情報です。</p>
+            <p class="muted">Firestoreに保存されている会員情報です。</p>
 
             <div class="profile-grid">
               <div class="profile-info-card">
@@ -142,7 +142,7 @@
               </div>
               <div class="profile-info-card">
                 <span>登録日</span>
-                <strong id="profileCreatedAt">2026.05.16</strong>
+                <strong id="profileCreatedAt">2026.05.17</strong>
               </div>
             </div>
           </div>
@@ -209,35 +209,36 @@
 
         <!-- NEWS -->
         <section id="panel-news" class="screen-panel">
+          <div id="adminNoticeBox" class="settings-card admin-card hidden">
+            <h3>管理者用：お知らせ投稿</h3>
+            <p class="muted">この投稿は全ユーザーのお知らせ欄に表示されます。</p>
+
+            <label for="noticeTitleInput">タイトル</label>
+            <input id="noticeTitleInput" class="settings-input" type="text" placeholder="お知らせタイトル" />
+
+            <label for="noticeBodyInput">本文</label>
+            <textarea id="noticeBodyInput" class="settings-textarea" placeholder="お知らせ本文"></textarea>
+
+            <button class="save-btn" type="button" onclick="postNotice()">お知らせを投稿する</button>
+            <p id="noticePostMessage" class="save-message"></p>
+          </div>
+
           <div class="settings-card notice-panel">
             <div class="notice-head">
               <div>
                 <h3>お知らせ</h3>
                 <p class="muted">FAN CLUBからの最新情報です。</p>
               </div>
-              <span class="notice-count">3件</span>
+              <span id="noticeCount" class="notice-count">0件</span>
             </div>
 
-            <article class="notice-card important">
-              <span class="notice-label">重要</span>
-              <h4>プロフィール画像アップロード機能を追加しました</h4>
-              <p>会員情報ページから画像を選択し、会員証のプロフィール画像を変更できるようになりました。</p>
-              <small>2026.05.17</small>
-            </article>
-
-            <article class="notice-card">
-              <span class="notice-label">更新</span>
-              <h4>デジタル会員証を公開しました</h4>
-              <p>会員番号、登録日、ランク情報が表示されるデジタル会員証を利用できます。</p>
-              <small>2026.05.16</small>
-            </article>
-
-            <article class="notice-card">
-              <span class="notice-label">予告</span>
-              <h4>限定コンテンツ機能を準備中です</h4>
-              <p>今後、会員限定のお知らせ・画像・動画を閲覧できる機能を追加予定です。</p>
-              <small>COMING SOON</small>
-            </article>
+            <div id="noticeList" class="notice-list">
+              <article class="notice-card">
+                <span class="notice-label">読み込み中</span>
+                <h4>お知らせを取得しています</h4>
+                <p>少しお待ちください。</p>
+              </article>
+            </div>
           </div>
         </section>
 
