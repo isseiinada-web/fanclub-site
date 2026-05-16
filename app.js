@@ -4,19 +4,13 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  onAuthStateChanged,
   sendPasswordResetEmail,
+  onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// Firebase設定
 const firebaseConfig = {
   apiKey: "AIzaSyA43kfNncTrEKhedVSunTReZQvPzMTkHj0",
   authDomain: "brothers-fanclub.firebaseapp.com",
@@ -27,58 +21,107 @@ const firebaseConfig = {
   measurementId: "G-KBM70KG1DH"
 };
 
+
+
+// 初期化
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
-const db = getFirestore(app);
 
+
+// DOM
 const loginPage = document.getElementById("loginPage");
+
 const memberPage = document.getElementById("memberPage");
 
 const authMessage = document.getElementById("authMessage");
 
+
+// 会員番号生成
+function generateMemberNumber() {
+
+  return Math.floor(
+    100000 + Math.random() * 900000
+  );
+
+}
+
+
+// 会員ページ表示
+function showMemberPage(user) {
+
+  const number = generateMemberNumber();
+
+  const today = new Date();
+
+  const yyyy = today.getFullYear();
+
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+
+  const dd = String(today.getDate()).padStart(2, "0");
+
+  const dateText = `${yyyy}.${mm}.${dd}`;
+
+  loginPage.classList.add("hidden");
+
+  memberPage.classList.remove("hidden");
+
+
+  document.getElementById("memberName").innerText =
+    user.email.split("@")[0];
+
+  document.getElementById("memberNumber").innerText =
+    number;
+
+  document.getElementById("miniNumber").innerText =
+    `No.${number}`;
+
+  document.getElementById("sideNumber").innerText =
+    `No.${number}`;
+
+  document.getElementById("sinceDate").innerText =
+    `SINCE ${dateText}`;
+
+  document.getElementById("fanId").innerText =
+    `FAN CLUB ID FC-${number}`;
+
+}
+
+
+// 新規登録
 window.registerUser = async () => {
 
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const email =
+    document.getElementById("email").value;
+
+  const password =
+    document.getElementById("password").value;
 
   try {
 
-    const result = await createUserWithEmailAndPassword(
+    await createUserWithEmailAndPassword(
       auth,
       email,
       password
     );
 
-    const uid = result.user.uid;
-
-    const memberNo = Math.floor(
-      100000 + Math.random() * 900000
-    );
-
-    await setDoc(doc(db, "users", uid), {
-      nickname: email.split("@")[0],
-      memberNo: memberNo,
-      rank: "村人",
-      createdAt: new Date().toISOString()
-    });
-
-    authMessage.innerText = "新規登録成功";
-    authMessage.style.color = "#22c55e";
-
   } catch (error) {
 
     authMessage.innerText = error.message;
-    authMessage.style.color = "#ef4444";
 
   }
 
 };
 
+
+// ログイン
 window.loginUser = async () => {
 
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const email =
+    document.getElementById("email").value;
+
+  const password =
+    document.getElementById("password").value;
 
   try {
 
@@ -88,78 +131,66 @@ window.loginUser = async () => {
       password
     );
 
-    authMessage.innerText = "ログイン成功";
-    authMessage.style.color = "#22c55e";
-
   } catch (error) {
 
     authMessage.innerText = error.message;
-    authMessage.style.color = "#ef4444";
 
   }
 
 };
 
+
+// パスワードリセット
 window.resetPassword = async () => {
 
-  const email = document.getElementById("email").value;
+  const email =
+    document.getElementById("email").value;
 
   if (!email) {
-    authMessage.innerText = "メールアドレス入力";
-    authMessage.style.color = "#ef4444";
+
+    authMessage.innerText =
+      "メールアドレスを入力してください";
+
     return;
+
   }
 
   try {
 
     await sendPasswordResetEmail(auth, email);
 
-    authMessage.innerText = "リセットメール送信";
-    authMessage.style.color = "#22c55e";
+    authMessage.innerText =
+      "リセットメールを送信しました";
 
   } catch (error) {
 
     authMessage.innerText = error.message;
-    authMessage.style.color = "#ef4444";
 
   }
 
 };
 
+
+// ログアウト
 window.logoutUser = async () => {
+
   await signOut(auth);
+
 };
 
-onAuthStateChanged(auth, async (user) => {
+
+// 状態監視
+onAuthStateChanged(auth, (user) => {
 
   if (user) {
 
-    loginPage.style.display = "none";
-    memberPage.style.display = "flex";
-
-    const snap = await getDoc(
-      doc(db, "users", user.uid)
-    );
-
-    if (snap.exists()) {
-
-      const data = snap.data();
-
-      document.getElementById("displayName").innerText =
-        data.nickname;
-
-      document.getElementById("memberNumber").innerText =
-        data.memberNo;
-
-      document.getElementById("rankText").innerText =
-        data.rank;
-
-    }
+    showMemberPage(user);
 
   } else {
 
-    loginPage.style.display = "flex";
-    memberPage.style.display = "none";
+    loginPage.classList.remove("hidden");
+
+    memberPage.classList.add("hidden");
 
   }
 
