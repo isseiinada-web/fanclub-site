@@ -27,7 +27,6 @@ const firebaseConfig = {
   measurementId: "G-KBM70KG1DH"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -357,24 +356,3 @@ if (profileImageInput) {
     height: 180px;
   }
 }
-window.loginUser = async () => {
-
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  const authMessage = document.getElementById("authMessage");
-
-  try {
-
-    await signInWithEmailAndPassword(auth, email, password);
-
-    authMessage.innerText = "ログイン成功";
-    authMessage.style.color = "#22c55e";
-
-  } catch (error) {
-
-    authMessage.innerText = error.message;
-    authMessage.style.color = "#ef4444";
-
-  }
-
-};
