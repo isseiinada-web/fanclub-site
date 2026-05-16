@@ -6,10 +6,9 @@
   <title>FAN CLUB</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
 
-  <!-- LOGIN PAGE -->
+  <!-- LOGIN -->
   <main id="loginPage" class="login-page">
 
     <section class="login-card">
@@ -23,18 +22,10 @@
       <p class="login-lead">会員専用ページへログイン</p>
 
       <label>メールアドレス</label>
-      <input
-        id="email"
-        type="email"
-        placeholder="example@email.com"
-      />
+      <input id="email" type="email" placeholder="example@email.com" />
 
       <label>パスワード</label>
-      <input
-        id="password"
-        type="password"
-        placeholder="6文字以上"
-      />
+      <input id="password" type="password" placeholder="6文字以上" />
 
       <button class="primary-btn" onclick="loginUser()">
         ログイン
@@ -54,6 +45,7 @@
 
   </main>
 
+
   <!-- MEMBER PAGE -->
   <main id="memberPage" class="member-page hidden">
 
@@ -66,9 +58,7 @@
 
       <div class="top-actions">
 
-        <div class="notify">
-          🔔
-        </div>
+        <div class="notify">🔔</div>
 
         <div class="mypage-mini">
           <span>マイページ</span>
@@ -82,6 +72,7 @@
       </div>
 
     </header>
+
 
     <section class="dashboard">
 
@@ -114,6 +105,7 @@
         </div>
 
       </aside>
+
 
       <!-- CENTER -->
       <section class="member-card-wrap">
@@ -148,12 +140,11 @@
 
           </div>
 
+
           <div class="member-right">
 
             <div class="avatar-ring">
-              <img
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1200&auto=format&fit=crop"
-              />
+              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1200&auto=format&fit=crop" />
             </div>
 
             <div class="status-chip">
@@ -170,35 +161,26 @@
 
       </section>
 
+
       <!-- RIGHT -->
       <aside class="status-panel">
 
         <h2>ステータス</h2>
 
         <div class="status-block">
-
           <p>現在のランク</p>
-
           <h3>村人</h3>
-
           <span>1年目</span>
-
         </div>
 
         <div class="status-block">
-
           <p>会員番号</p>
-
           <h3 id="sideNumber">No.000001</h3>
-
         </div>
 
         <div class="status-block">
-
           <p>次のランクまで</p>
-
           <h3>あと3ヶ月</h3>
-
         </div>
 
         <button class="outline-btn">
