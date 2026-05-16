@@ -165,7 +165,10 @@ function updateUI(profile, user) {
   const membership = calculateMembership(profile.registerDate);
 
   const nickname = profile.nickname || "member";
-  const number = String(profile.memberNumber || 1).padStart(6, "0");
+ const number =
+  profile.role === "admin"
+    ? "ADMIN"
+    : String(profile.memberNumber || 1).padStart(6, "0");
   const avatarUrl = profile.avatarUrl || "./villager-icon.jpg";
 
   safeSet("memberName", nickname);
