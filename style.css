@@ -5,13 +5,13 @@
 }
 
 body{
-  font-family:
-  -apple-system,
-  BlinkMacSystemFont,
-  sans-serif;
-
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   background:#ececf1;
   color:#0c1733;
+}
+
+.hidden{
+  display:none !important;
 }
 
 /* LOGIN */
@@ -92,11 +92,7 @@ body{
 
 .primary-btn{
   margin-top:22px;
-  background:linear-gradient(
-    90deg,
-    #7b4cff,
-    #914cff
-  );
+  background:linear-gradient(90deg,#7b4cff,#914cff);
   color:white;
 }
 
@@ -125,10 +121,6 @@ body{
 
 /* MEMBER */
 
-.hidden{
-  display:none !important;
-}
-
 .member-page{
   width:100%;
 }
@@ -137,11 +129,9 @@ body{
   height:82px;
   background:white;
   border-bottom:1px solid #dfe4ee;
-
   display:flex;
   align-items:center;
   justify-content:space-between;
-
   padding:0 28px;
 }
 
@@ -168,7 +158,6 @@ body{
   border-radius:16px;
   background:white;
   border:1px solid #e2e7f0;
-
   display:flex;
   align-items:center;
   justify-content:center;
@@ -196,11 +185,8 @@ body{
   display:grid;
   grid-template-columns:250px 1fr 290px;
   gap:20px;
-
   padding:36px 18px;
 }
-
-/* LEFT */
 
 .left-menu{
   display:flex;
@@ -241,29 +227,15 @@ body{
   color:#7f8ba5;
 }
 
-/* CENTER */
-
 .member-card{
   min-height:590px;
-
   border-radius:42px;
-
   background:
-  radial-gradient(circle at top left,
-  rgba(146,98,255,.25),
-  transparent 25%),
-
-  linear-gradient(
-    90deg,
-    #060b22,
-    #081737
-  );
-
+  radial-gradient(circle at top left,rgba(146,98,255,.25),transparent 25%),
+  linear-gradient(90deg,#060b22,#081737);
   overflow:hidden;
-
   display:flex;
   justify-content:space-between;
-
   padding:38px;
 }
 
@@ -333,17 +305,12 @@ body{
   width:220px;
   height:70px;
   border-radius:999px;
-
   background:rgba(255,255,255,.08);
-
   border:1px solid rgba(205,170,255,.6);
-
   color:white;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
   font-size:24px;
   font-weight:700;
 }
@@ -352,8 +319,6 @@ body{
   background:rgba(255,255,255,.06);
   border-color:rgba(255,255,255,.2);
 }
-
-/* RIGHT */
 
 .status-panel{
   background:white;
@@ -383,12 +348,9 @@ body{
 .status-block span{
   display:inline-block;
   margin-top:10px;
-
   background:#efe6ff;
   color:#6d3cff;
-
   border-radius:999px;
-
   padding:6px 14px;
   font-weight:700;
 }
@@ -396,17 +358,11 @@ body{
 .outline-btn{
   width:100%;
   height:64px;
-
   border-radius:999px;
-
   border:2px solid #af8cff;
-
   background:white;
-
   color:#7b4cff;
-
   font-size:24px;
   font-weight:700;
-
   cursor:pointer;
 }
