@@ -16,6 +16,21 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  runTransaction,
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyA43kfNncTrEKhedVSunTReZQvPzMTkHj0",
   authDomain: "brothers-fanclub.firebaseapp.com",
@@ -26,9 +41,12 @@ const firebaseConfig = {
   measurementId: "G-KBM70KG1DH"
 };
 
+const ADMIN_EMAIL = "isseiren11220425@gmail.com";
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const storage = getStorage(app);
+const db = getFirestore(app);
 
 const $ = (id) => document.getElementById(id);
 
@@ -36,6 +54,10 @@ const loginPage = $("loginPage");
 const memberPage = $("memberPage");
 const authMessage = $("authMessage");
 const saveMessage = $("saveMessage");
+const noticePostMessage = $("noticePostMessage");
+
+let currentProfile = null;
+let unsubscribeNotices = null;
 
 function setMessage(text) {
   if (authMessage) authMessage.textContent = text;
@@ -45,10 +67,8 @@ function setSaveMessage(text) {
   if (saveMessage) saveMessage.textContent = text;
 }
 
-function generateMemberNumber() {
-  const count = Number(localStorage.getItem("fan-club-demo-member-count") || "0") + 1;
-  localStorage.setItem("fan-club-demo-member-count", count);
-  return String(count).padStart(6, "0");
+function setNoticePostMessage(text) {
+  if (noticePostMessage) noticePostMessage.textContent = text;
 }
 
 function todayText() {
@@ -59,8 +79,22 @@ function todayText() {
   return `${yyyy}.${mm}.${dd}`;
 }
 
+function formatDateFromTimestamp(value) {
+  if (!value) return "";
+
+  if (value.toDate) {
+    const d = value.toDate();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}.${mm}.${dd}`;
+  }
+
+  return String(value);
+}
+
 function calculateMembership(registerDate) {
-  const start = registerDate ? new Date(registerDate.replaceAll(".", "/")) : new Date();
+  const start = registerDate ? new Date(String(registerDate).replaceAll(".", "/")) : new Date();
   const now = new Date();
 
   let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
@@ -111,50 +145,171 @@ function calculateMembership(registerDate) {
   };
 }
 
+function safeSet(id, text) {
+  const el = $(id);
+  if (el) el.textContent = text;
+}
+
+function safeValue(id, value) {
+  const el = $(id);
+  if (el) el.value = value;
+}
+
+function safeSrc(id, src) {
+  const el = $(id);
+  if (el) el.src = src;
+}
+
 function updateUI(profile, user) {
+  currentProfile = profile;
+
   const membership = calculateMembership(profile.registerDate);
 
   const nickname = profile.nickname || "member";
-  const number = profile.memberNumber || "000001";
+  const number = String(profile.memberNumber || 1).padStart(6, "0");
   const avatarUrl = profile.avatarUrl || "./villager-icon.jpg";
 
-  $("memberName").textContent = nickname;
-  $("memberNumber").textContent = number;
-  $("registerDate").textContent = `SINCE ${profile.registerDate}`;
-  $("fanClubId").textContent = `FAN CLUB ID　FC-${number}`;
-  $("avatarImage").src = avatarUrl;
+  safeSet("memberName", nickname);
+  safeSet("memberNumber", number);
+  safeSet("registerDate", `SINCE ${profile.registerDate}`);
+  safeSet("fanClubId", `FAN CLUB ID　FC-${number}`);
+  safeSrc("avatarImage", avatarUrl);
 
-  $("memberRank").textContent = membership.rank;
-  $("yearLabel").textContent = membership.yearLabel;
+  safeSet("memberRank", membership.rank);
+  safeSet("yearLabel", membership.yearLabel);
 
-  $("rankText").textContent = membership.rank;
-  $("sideYear").textContent = membership.yearLabel;
-  $("sideBigNumber").textContent = `No.${number}`;
-  $("nextRank").textContent = membership.nextText;
-  $("topMemberNo").textContent = `No.${number}`;
+  safeSet("rankText", membership.rank);
+  safeSet("sideYear", membership.yearLabel);
+  safeSet("sideBigNumber", `No.${number}`);
+  safeSet("nextRank", membership.nextText);
+  safeSet("topMemberNo", `No.${number}`);
 
-  $("profileEmail").textContent = user?.email || "-";
-  $("profileNickname").textContent = nickname;
-  $("profileMemberNo").textContent = `No.${number}`;
-  $("profileCreatedAt").textContent = profile.registerDate;
+  safeSet("profileEmail", user?.email || "-");
+  safeSet("profileNickname", nickname);
+  safeSet("profileMemberNo", `No.${number}`);
+  safeSet("profileCreatedAt", profile.registerDate);
 
-  $("statusRank").textContent = membership.rank;
-  $("statusDuration").textContent = membership.durationText;
-  $("statusNext").textContent = membership.nextText;
-  $("progressCurrent").textContent = membership.rank;
-  $("progressNext").textContent = membership.nextRank;
-  $("progressFill").style.width = `${membership.progress}%`;
+  safeSet("statusRank", membership.rank);
+  safeSet("statusDuration", membership.durationText);
+  safeSet("statusNext", membership.nextText);
+  safeSet("progressCurrent", membership.rank);
+  safeSet("progressNext", membership.nextRank);
 
-  $("nicknameInput").value = nickname;
+  const progressFill = $("progressFill");
+  if (progressFill) progressFill.style.width = `${membership.progress}%`;
+
+  safeValue("nicknameInput", nickname);
 }
 
-function makeDefaultProfile(user) {
-  return {
-    nickname: user.email.split("@")[0],
-    memberNumber: generateMemberNumber(),
-    registerDate: todayText(),
-    avatarUrl: "./villager-icon.jpg"
-  };
+async function createProfileIfNeeded(user) {
+  const userRef = doc(db, "users", user.uid);
+  const snap = await getDoc(userRef);
+
+  if (snap.exists()) {
+    return snap.data();
+  }
+
+  const counterRef = doc(db, "system", "memberCounter");
+  const registerDate = todayText();
+
+  const profile = await runTransaction(db, async (transaction) => {
+    const counterSnap = await transaction.get(counterRef);
+    const current = counterSnap.exists() ? Number(counterSnap.data().current || 0) : 0;
+    const nextNumber = current + 1;
+
+    const newProfile = {
+      uid: user.uid,
+      email: user.email,
+      nickname: user.email.split("@")[0],
+      memberNumber: nextNumber,
+      registerDate,
+      avatarUrl: "./villager-icon.jpg",
+      role: user.email === ADMIN_EMAIL ? "admin" : "member",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    transaction.set(counterRef, { current: nextNumber }, { merge: true });
+    transaction.set(userRef, newProfile);
+
+    return newProfile;
+  });
+
+  return profile;
+}
+
+function renderNotices(docs) {
+  const noticeList = $("noticeList");
+  const noticeBadge = $("noticeBadge");
+  const noticeCount = $("noticeCount");
+
+  if (!noticeList) return;
+
+  if (noticeBadge) noticeBadge.textContent = docs.length;
+  if (noticeCount) noticeCount.textContent = `${docs.length}件`;
+
+  if (docs.length === 0) {
+    noticeList.innerHTML = `
+      <article class="notice-card">
+        <span class="notice-label">INFO</span>
+        <h4>まだお知らせはありません</h4>
+        <p>新しいお知らせが投稿されるとここに表示されます。</p>
+      </article>
+    `;
+    return;
+  }
+
+  noticeList.innerHTML = docs.map((notice, index) => {
+    const label = index === 0 ? "最新" : "お知らせ";
+    const importantClass = index === 0 ? " important" : "";
+    const dateText = formatDateFromTimestamp(notice.createdAt);
+
+    return `
+      <article class="notice-card${importantClass}">
+        <span class="notice-label">${label}</span>
+        <h4>${escapeHtml(notice.title || "無題のお知らせ")}</h4>
+        <p>${escapeHtml(notice.body || "")}</p>
+        <small>${dateText || ""}</small>
+      </article>
+    `;
+  }).join("");
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function startNoticeListener() {
+  if (unsubscribeNotices) unsubscribeNotices();
+
+  const q = query(collection(db, "notices"), orderBy("createdAt", "desc"));
+
+  unsubscribeNotices = onSnapshot(q, (snapshot) => {
+    const docs = snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
+
+    renderNotices(docs);
+  }, (error) => {
+    console.error(error);
+  });
+}
+
+function updateAdminUI(user) {
+  const adminNoticeBox = $("adminNoticeBox");
+  if (!adminNoticeBox) return;
+
+  if (user && user.email === ADMIN_EMAIL) {
+    adminNoticeBox.classList.remove("hidden");
+  } else {
+    adminNoticeBox.classList.add("hidden");
+  }
 }
 
 window.registerUser = async () => {
@@ -174,8 +329,7 @@ window.registerUser = async () => {
   try {
     setMessage("登録中...");
     const result = await createUserWithEmailAndPassword(auth, email, password);
-    const profile = makeDefaultProfile(result.user);
-    localStorage.setItem(result.user.uid, JSON.stringify(profile));
+    await createProfileIfNeeded(result.user);
     setMessage("会員登録完了");
   } catch (error) {
     setMessage(error.message);
@@ -230,10 +384,7 @@ window.saveProfile = async () => {
   const nickname = $("nicknameInput").value.trim() || user.email.split("@")[0];
   const file = $("avatarUpload").files[0];
 
-  let current = JSON.parse(localStorage.getItem(user.uid));
-  if (!current) current = makeDefaultProfile(user);
-
-  let avatarUrl = current.avatarUrl || "./villager-icon.jpg";
+  let avatarUrl = currentProfile?.avatarUrl || "./villager-icon.jpg";
 
   try {
     setSaveMessage("保存中...");
@@ -245,17 +396,58 @@ window.saveProfile = async () => {
     }
 
     const updated = {
-      ...current,
+      ...currentProfile,
       nickname,
-      avatarUrl
+      avatarUrl,
+      updatedAt: serverTimestamp()
     };
 
-    localStorage.setItem(user.uid, JSON.stringify(updated));
-    updateUI(updated, user);
+    await updateDoc(doc(db, "users", user.uid), updated);
+
+    const latestSnap = await getDoc(doc(db, "users", user.uid));
+    const latestProfile = latestSnap.data();
+
+    updateUI(latestProfile, user);
     setSaveMessage("保存しました");
     alert("プロフィール保存完了");
   } catch (error) {
     setSaveMessage(error.message);
+    alert(error.message);
+  }
+};
+
+window.postNotice = async () => {
+  const user = auth.currentUser;
+
+  if (!user || user.email !== ADMIN_EMAIL) {
+    alert("管理者のみ投稿できます。");
+    return;
+  }
+
+  const title = $("noticeTitleInput").value.trim();
+  const body = $("noticeBodyInput").value.trim();
+
+  if (!title || !body) {
+    setNoticePostMessage("タイトルと本文を入力してください。");
+    return;
+  }
+
+  try {
+    setNoticePostMessage("投稿中...");
+
+    await addDoc(collection(db, "notices"), {
+      title,
+      body,
+      createdAt: serverTimestamp(),
+      createdBy: user.uid,
+      createdByEmail: user.email
+    });
+
+    $("noticeTitleInput").value = "";
+    $("noticeBodyInput").value = "";
+    setNoticePostMessage("投稿しました");
+  } catch (error) {
+    setNoticePostMessage(error.message);
     alert(error.message);
   }
 };
@@ -276,21 +468,23 @@ window.showPanel = (name) => {
   if (nav) nav.classList.add("active");
 };
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (user) {
     loginPage.classList.add("hidden");
     memberPage.classList.remove("hidden");
 
-    let profile = JSON.parse(localStorage.getItem(user.uid));
-
-    if (!profile) {
-      profile = makeDefaultProfile(user);
-      localStorage.setItem(user.uid, JSON.stringify(profile));
-    }
-
+    const profile = await createProfileIfNeeded(user);
     updateUI(profile, user);
+    updateAdminUI(user);
+    startNoticeListener();
   } else {
     loginPage.classList.remove("hidden");
     memberPage.classList.add("hidden");
+    updateAdminUI(null);
+
+    if (unsubscribeNotices) {
+      unsubscribeNotices();
+      unsubscribeNotices = null;
+    }
   }
 });
