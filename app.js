@@ -209,7 +209,7 @@ async function createProfileIfNeeded(user) {
       email: user.email,
       nickname: user.email?.split("@")[0] || "member",
       memberNumber: nextNumber,
-      avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1200&auto=format&fit=crop",
+      avatarUrl: "./villager-icon.jpg"
       createdAt: today,
       updatedAt: today,
       createdServerAt: serverTimestamp()
