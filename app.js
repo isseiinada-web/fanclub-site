@@ -218,3 +218,141 @@ onAuthStateChanged(auth, async (user) => {
     memberPage.classList.add("hidden");
   }
 });
+```
+
+## 追加アップデートコード
+
+### app.js に追加
+
+```javascript
+const editNameInput = document.getElementById("editName");
+const saveProfileBtn = document.getElementById("saveProfile");
+const profileImageInput = document.getElementById("profileImageInput");
+
+if (saveProfileBtn) {
+  saveProfileBtn.onclick = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const newName = editNameInput.value;
+
+    await updateDoc(doc(db, "users", user.uid), {
+      nickname: newName
+    });
+
+    document.getElementById("displayName").innerText = newName;
+
+    alert("プロフィール更新完了");
+  };
+}
+
+if (profileImageInput) {
+  profileImageInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      document.getElementById("profileImage").src = reader.result;
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+```
+
+### index.html に追加
+
+```html
+<div class="settings-card">
+  <h2>プロフィール編集</h2>
+
+  <input
+    id="editName"
+    type="text"
+    placeholder="ニックネーム"
+    class="settings-input"
+  />
+
+  <input
+    id="profileImageInput"
+    type="file"
+    accept="image/*"
+    class="settings-input"
+  />
+
+  <button id="saveProfile" class="save-btn">
+    保存する
+  </button>
+</div>
+```
+
+### style.css に追加
+
+```css
+.settings-card {
+  margin-top: 30px;
+  background: white;
+  border-radius: 28px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+}
+
+.settings-card h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.settings-input {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #ddd;
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.save-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(90deg,#7c4dff,#9b6bff);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .main-layout {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .left-menu,
+  .right-status {
+    width: 100%;
+  }
+
+  .member-card {
+    padding: 30px;
+  }
+
+  .digital-title {
+    font-size: 60px;
+    line-height: 0.95;
+  }
+
+  .member-number {
+    font-size: 72px;
+  }
+
+  .profile-image {
+    width: 180px;
+    height: 180px;
+  }
+}
