@@ -211,17 +211,24 @@ async function createProfileIfNeeded(user) {
 
   const counterRef = doc(db, "system", "memberCounter");
   const registerDate = todayText();
+  const isAdmin = user.email === ADMIN_EMAIL;
 
   const profile = await runTransaction(db, async (transaction) => {
     const counterSnap = await transaction.get(counterRef);
     const current = counterSnap.exists() ? Number(counterSnap.data().current || 0) : 0;
-    const nextNumber = current + 1;
+
+    let nextNumber = current;
+
+    if (!isAdmin) {
+      nextNumber = current + 1;
+      
+    }
 
     const newProfile = {
       uid: user.uid,
       email: user.email,
       nickname: user.email.split("@")[0],
-      memberNumber: nextNumber,
+      memberNumber: isAdmin ? "ADMIN" : nextNumber,
       registerDate,
       avatarUrl: "./villager-icon.jpg",
       role: user.email === ADMIN_EMAIL ? "admin" : "member",
