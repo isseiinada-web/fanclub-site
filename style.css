@@ -640,3 +640,12 @@ button {
     height: 220px;
   }
 }
+button {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 9999;
+}
+.login-card {
+  position: relative;
+  z-index: 9999;
+}
