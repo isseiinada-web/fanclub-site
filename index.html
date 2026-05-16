@@ -8,192 +8,217 @@
 </head>
 <body>
 
-  <!-- LOGIN -->
+  <!-- LOGIN PAGE -->
   <main id="loginPage" class="login-page">
-
     <section class="login-card">
-
       <div class="login-mark">FC</div>
-
       <p class="eyebrow">OFFICIAL COMMUNITY</p>
-
       <h1>FAN CLUB</h1>
-
       <p class="login-lead">会員専用ページへログイン</p>
 
-      <label>メールアドレス</label>
-      <input id="email" type="email" placeholder="example@email.com" />
+      <label for="email">メールアドレス</label>
+      <input id="email" type="email" placeholder="example@email.com" autocomplete="email" />
 
-      <label>パスワード</label>
-      <input id="password" type="password" placeholder="6文字以上" />
+      <label for="password">パスワード</label>
+      <input id="password" type="password" placeholder="6文字以上" autocomplete="current-password" />
 
-      <button class="primary-btn" onclick="loginUser()">
-        ログイン
-      </button>
-
-      <button class="dark-btn" onclick="registerUser()">
-        新規会員登録
-      </button>
-
-      <button class="link-btn" onclick="resetPassword()">
-        パスワードを忘れた方
-      </button>
+      <button class="primary-btn" type="button" onclick="loginUser()">ログイン</button>
+      <button class="dark-btn" type="button" onclick="registerUser()">新規会員登録</button>
+      <button class="link-btn" type="button" onclick="resetPassword()">パスワードを忘れた方</button>
 
       <p id="authMessage" class="auth-message"></p>
-
     </section>
-
   </main>
-
 
   <!-- MEMBER PAGE -->
   <main id="memberPage" class="member-page hidden">
-
     <header class="topbar">
-
-      <div class="top-logo">
-        <h2>FAN CLUB</h2>
+      <button class="brand" type="button" onclick="showPanel('card')">
+        <h1>FAN CLUB</h1>
         <p>OFFICIAL COMMUNITY</p>
-      </div>
+      </button>
 
       <div class="top-actions">
-
-        <div class="notify">🔔</div>
-
-        <div class="mypage-mini">
-          <span>マイページ</span>
-          <strong id="miniNumber">No.000001</strong>
-        </div>
-
-        <button class="logout-btn" onclick="logoutUser()">
-          ログアウト
+        <button class="bell" type="button" onclick="showPanel('notices')">🔔<span>3</span></button>
+        <button class="my-page" type="button" onclick="showPanel('profile')">
+          マイページ<br><small id="topMemberNo">No.000001</small>
         </button>
-
+        <button class="logout" type="button" onclick="logoutUser()">ログアウト</button>
       </div>
-
     </header>
 
-
-    <section class="dashboard">
-
-      <!-- LEFT -->
-      <aside class="left-menu">
-
-        <div class="menu-logo">
+    <div class="app-shell">
+      <!-- LEFT MENU -->
+      <aside class="side-nav">
+        <section class="logo-panel">
           <h2>FAN<br>CLUB</h2>
           <p>OFFICIAL<br>COMMUNITY</p>
-        </div>
+        </section>
 
-        <div class="menu-card">
-          <h3>会員情報</h3>
-          <p>登録情報の確認・編集</p>
-        </div>
-
-        <div class="menu-card">
-          <h3>ステータス</h3>
-          <p>ランク・継続期間を確認</p>
-        </div>
-
-        <div class="menu-card">
-          <h3>お知らせ</h3>
-          <p>最新情報をチェック</p>
-        </div>
-
-        <div class="menu-card">
-          <h3>SNS連携</h3>
-          <p>今後追加予定</p>
-        </div>
-
-      </aside>
-
-
-      <!-- CENTER -->
-      <section class="member-card-wrap">
-
-        <div class="member-card">
-
-          <div class="member-left">
-
-            <p class="eyebrow">OFFICIAL COMMUNITY</p>
-
-            <h1>
-              DIGITAL<br>
-              MEMBER<br>
-              CARD
-            </h1>
-
-            <h2 id="memberName">User</h2>
-
-            <p class="small-title">MEMBER NO.</p>
-
-            <div class="big-number" id="memberNumber">
-              000001
-            </div>
-
-            <p class="since" id="sinceDate">
-              SINCE 2026.05.16
-            </p>
-
-            <p class="fan-id" id="fanId">
-              FAN CLUB ID FC-000001
-            </p>
-
-          </div>
-
-
-          <div class="member-right">
-
-            <div class="avatar-ring">
-              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1200&auto=format&fit=crop" />
-            </div>
-
-            <div class="status-chip">
-              村人
-            </div>
-
-            <div class="status-chip dark">
-              1年目
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      <!-- RIGHT -->
-      <aside class="status-panel">
-
-        <h2>ステータス</h2>
-
-        <div class="status-block">
-          <p>現在のランク</p>
-          <h3>村人</h3>
-          <span>1年目</span>
-        </div>
-
-        <div class="status-block">
-          <p>会員番号</p>
-          <h3 id="sideNumber">No.000001</h3>
-        </div>
-
-        <div class="status-block">
-          <p>次のランクまで</p>
-          <h3>あと3ヶ月</h3>
-        </div>
-
-        <button class="outline-btn">
-          ランクについて
+        <button class="nav-card active" data-panel="card" type="button" onclick="showPanel('card')">
+          <strong>デジタル会員証</strong>
+          <span>あなたの会員証を確認</span>
         </button>
 
+        <button class="nav-card" data-panel="profile" type="button" onclick="showPanel('profile')">
+          <strong>会員情報</strong>
+          <span>登録情報の確認・編集</span>
+        </button>
+
+        <button class="nav-card" data-panel="status" type="button" onclick="showPanel('status')">
+          <strong>ステータス</strong>
+          <span>ランク・継続期間を確認</span>
+        </button>
+
+        <button class="nav-card" data-panel="notices" type="button" onclick="showPanel('notices')">
+          <strong>お知らせ</strong>
+          <span>最新情報をチェック</span>
+        </button>
+
+        <button class="nav-card" data-panel="sns" type="button" onclick="showPanel('sns')">
+          <strong>SNS連携</strong>
+          <span>今後追加予定</span>
+        </button>
       </aside>
 
-    </section>
+      <!-- CENTER -->
+      <section class="main-content">
+        <section id="panel-card" class="screen-panel active-panel">
+          <div class="digital-card">
+            <div class="grid-bg"></div>
+            <div class="glow glow-1"></div>
+            <div class="glow glow-2"></div>
 
+            <div class="card-inner">
+              <p class="card-subtitle">OFFICIAL COMMUNITY</p>
+
+              <div class="card-layout">
+                <div class="card-text">
+                  <h2>DIGITAL<br>MEMBER<br>CARD</h2>
+                  <p id="cardName" class="member-name">member</p>
+
+                  <div class="number-area">
+                    <span>MEMBER NO.</span>
+                    <strong id="cardNumber">000001</strong>
+                  </div>
+
+                  <p id="sinceDate" class="since">SINCE 2026.05.16</p>
+                  <p id="fanClubId" class="fan-id">FAN CLUB ID　FC-000001</p>
+                </div>
+
+                <div class="card-visual">
+                  <div class="avatar-frame">
+                    <img id="avatarImage" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1200&auto=format&fit=crop" alt="profile" />
+                  </div>
+
+                  <div id="cardRank" class="rank-badge">村人</div>
+                  <div id="cardYear" class="year-badge">1年目</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="panel-profile" class="screen-panel">
+          <div class="info-panel">
+            <h3>会員情報</h3>
+            <div class="info-grid">
+              <div><span>メールアドレス</span><strong id="profileEmail">-</strong></div>
+              <div><span>ニックネーム</span><strong id="profileNickname">member</strong></div>
+              <div><span>会員番号</span><strong id="profileMemberNo">No.000001</strong></div>
+              <div><span>登録日</span><strong id="profileCreatedAt">2026.05.16</strong></div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3>プロフィール編集</h3>
+            <p class="muted">会員証に表示される名前と画像URLを変更できます。</p>
+
+            <label for="editNickname">ニックネーム</label>
+            <input id="editNickname" class="settings-input" type="text" placeholder="ニックネーム" />
+
+            <label for="editAvatarUrl">プロフィール画像URL</label>
+            <input id="editAvatarUrl" class="settings-input" type="url" placeholder="https://..." />
+
+            <button class="save-btn" type="button" onclick="saveProfile()">保存する</button>
+            <p id="saveMessage" class="save-message"></p>
+          </div>
+        </section>
+
+        <section id="panel-status" class="screen-panel">
+          <div class="info-panel">
+            <h3>ランク進行状況</h3>
+            <div class="status-summary">
+              <div><span>現在のランク</span><strong id="statusRankInline">村人</strong></div>
+              <div><span>継続期間</span><strong id="statusDurationInline">0ヶ月0日</strong></div>
+              <div><span>次のランクまで</span><strong id="statusNextInline">あと3ヶ月</strong></div>
+            </div>
+
+            <div class="progress-wrap">
+              <div class="progress-head">
+                <span id="progressCurrent">村人</span>
+                <span id="progressNext">見習い</span>
+              </div>
+              <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+              </div>
+            </div>
+
+            <div class="rank-list">
+              <div><strong>村人</strong><span>0〜3ヶ月</span></div>
+              <div><strong>見習い</strong><span>3〜6ヶ月</span></div>
+              <div><strong>かけだし</strong><span>6〜9ヶ月</span></div>
+              <div><strong>冒険者</strong><span>9〜12ヶ月</span></div>
+              <div><strong>1年メンバー</strong><span>1年以上</span></div>
+              <div><strong>古参ファン</strong><span>3年以上</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="panel-notices" class="screen-panel">
+          <div class="info-panel">
+            <h3>お知らせ</h3>
+            <div class="notice">🎉 FAN CLUBへようこそ</div>
+            <div class="notice">📌 デジタル会員証を公開しました</div>
+            <div class="notice">🚀 今後、画像アップロード・管理者ページ・限定公開機能を追加予定です</div>
+          </div>
+        </section>
+
+        <section id="panel-sns" class="screen-panel">
+          <div class="info-panel">
+            <h3>SNS連携</h3>
+            <p class="muted">Instagram / X / YouTube 連携は今後追加予定です。</p>
+          </div>
+        </section>
+      </section>
+
+      <!-- RIGHT STATUS -->
+      <aside class="status-side">
+        <section class="status-card">
+          <h2>ステータス</h2>
+
+          <div class="status-block">
+            <span>現在のランク</span>
+            <strong id="sideRank">村人</strong>
+            <em id="sideYear">1年目</em>
+          </div>
+
+          <div class="status-block">
+            <span>会員番号</span>
+            <strong id="sideMemberNo">No.000001</strong>
+          </div>
+
+          <div class="status-block">
+            <span>次のランクまで</span>
+            <strong id="sideNext">あと3ヶ月</strong>
+          </div>
+
+          <button type="button" onclick="showPanel('status')">ランクについて</button>
+        </section>
+      </aside>
+    </div>
   </main>
 
   <script type="module" src="app.js"></script>
-
 </body>
 </html>
