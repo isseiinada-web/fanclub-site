@@ -40,7 +40,6 @@ const firebaseConfig = {
   appId: "1:818864836252:web:a5fe021cb0a97c6877e759",
   measurementId: "G-KBM70KG1DH"
 };
-const ADMIN_EMAIL = "isseiren11220425@gmail.com";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -437,7 +436,7 @@ window.saveProfile = async () => {
 window.postNotice = async () => {
   const user = auth.currentUser;
 
-  if (!user || user.email !== ADMIN_EMAIL) {
+  if (!user || currentProfile?.role !== "admin") {
     alert("管理者のみ投稿できます。");
     return;
   }
