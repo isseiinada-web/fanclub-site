@@ -436,10 +436,9 @@ window.saveProfile = async () => {
 window.postNotice = async () => {
   const user = auth.currentUser;
 
-  if (!user || currentProfile?.role !== "admin") {
-    alert("管理者のみ投稿できます。");
-    return;
-  }
+  if (!user) {
+  return;
+}
 
   const title = $("noticeTitleInput").value.trim();
   const body = $("noticeBodyInput").value.trim();
