@@ -451,36 +451,39 @@ window.saveProfile = async () => {
 };
 
 window.postNotice = async () => {
-  const user = auth.currentUser;
-
-  if (!user) {
-  return;
-}
-
-  const title = $("noticeTitleInput").value.trim();
-  const body = $("noticeBodyInput").value.trim();
-
-  if (!title || !body) {
-    setNoticePostMessage("タイトルと本文を入力してください。");
-    return;
-  }
-
   try {
-    setNoticePostMessage("投稿中...");
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("ログインしてください");
+      return;
+    }
+
+    const titleInput = $("noticeTitleInput");
+    const bodyInput = $("noticeBodyInput");
+
+    const title = titleInput.value.trim();
+    const body = bodyInput.value.trim();
+
+    if (!title || !body) {
+      alert("タイトルと本文を入力してください");
+      return;
+    }
 
     await addDoc(collection(db, "notices"), {
-      title,
-      body,
-      createdAt: serverTimestamp(),
-      createdBy: user.uid,
-      createdByEmail: user.email
+      title: title,
+      body: body,
+      createdAt: new Date(),
+      createdBy: user.email
     });
 
-    $("noticeTitleInput").value = "";
-    $("noticeBodyInput").value = "";
-    setNoticePostMessage("投稿しました");
+    titleInput.value = "";
+    bodyInput.value = "";
+
+    alert("投稿しました");
+
   } catch (error) {
-    setNoticePostMessage(error.message);
+    console.error(error);
     alert(error.message);
   }
 };
