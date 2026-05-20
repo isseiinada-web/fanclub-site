@@ -311,7 +311,8 @@ noticeList.innerHTML = docs.map((notice, index) => {
     </article>
   `;
 }).join("");
-
+}
+  
 function escapeHtml(str) {
   return String(str)
     .replaceAll("&", "&amp;")
