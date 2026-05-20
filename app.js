@@ -280,36 +280,37 @@ function renderNotices(docs) {
     return;
   }
 
-  noticeList.innerHTML = docs.map((notice, index) => {
-    const label = index === 0 ? "最新" : "お知らせ";
-    const importantClass = index === 0 ? " important" : "";
-    const dateText = formatDateFromTimestamp(notice.createdAt);
+noticeList.innerHTML = docs.map((notice, index) => {
+  const label = index === 0 ? "最新" : "お知らせ";
+  const importantClass = index === 0 ? " important" : "";
+  const dateText = formatDateFromTimestamp(notice.createdAt);
 
-   return `
-  <article class="notice-card${importantClass}">
-    <span class="notice-label">${label}</span>
+  return `
+    <article class="notice-card${importantClass}">
+      <span class="notice-label">${label}</span>
 
-    <h4>${escapeHtml(notice.title || "無題のお知らせ")}</h4>
+      <h4>${escapeHtml(notice.title || "無題のお知らせ")}</h4>
 
-    <p>${escapeHtml(notice.body || "")}</p>
+      <p>${escapeHtml(notice.body || "")}</p>
 
-    <small>${dateText || ""}</small>
+      <small>${dateText || ""}</small>
 
-    ${
-      auth.currentUser && auth.currentUser.email === ADMIN_EMAIL
-        ? `
+      ${
+  auth.currentUser &&
+  auth.currentUser.email === ADMIN_EMAIL
+    ? `
       <button
         class="delete-btn"
-        onclick="deleteNotice('${notice.id}')"
+        onclick='deleteNotice("${notice.id}")'
       >
         削除
       </button>
     `
-        : ""
-    }
-
-  </article>
-`;
+    : ""
+}
+    </article>
+  `;
+}).join("");
 
 function escapeHtml(str) {
   return String(str)
