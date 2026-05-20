@@ -505,3 +505,119 @@ onAuthStateChanged(auth, async (user) => {
     }
   }
 });
+window.searchMembers = async () => {
+
+  const keyword = $("memberSearchInput").value.trim().toLowerCase();
+
+  const memberList = $("memberList");
+
+  memberList.innerHTML = "検索中...";
+
+  try {
+
+    const snap = await getDocs(collection(db, "users"));
+
+    let html = "";
+
+    let total = 0;
+    let banned = 0;
+
+    snap.forEach((docSnap) => {
+
+      total++;
+
+      const user = docSnap.data();
+
+      if (user.banned) {
+        banned++;
+      }
+
+      const searchTarget = `
+        ${user.email || ""}
+        ${user.nickname || ""}
+        ${user.uid || ""}
+      `.toLowerCase();
+
+      if (!searchTarget.includes(keyword)) {
+        return;
+      }
+
+      html += `
+        <div class="member-card">
+          <p><strong>${user.nickname || "未設定"}</strong></p>
+          <p>${user.email || ""}</p>
+          <p>UID: ${user.uid || ""}</p>
+          <p>ランク: ${user.rank || "村人"}</p>
+          <p>権限: ${user.role || "member"}</p>
+          <p>BAN: ${user.banned ? "ON" : "OFF"}</p>
+
+          <button onclick="toggleBan('${user.uid}', ${user.banned ? "false" : "true"})">
+            ${user.banned ? "BAN解除" : "BANする"}
+          </button>
+
+          <button onclick="makeAdmin('${user.uid}')">
+            管理者化
+          </button>
+        </div>
+      `;
+
+    });
+
+    $("totalMembers").textContent = total;
+    $("bannedMembers").textContent = banned;
+
+    if (!html) {
+      html = "該当ユーザーなし";
+    }
+
+    memberList.innerHTML = html;
+
+  } catch (error) {
+
+    console.error(error);
+
+    memberList.innerHTML = error.message;
+
+  }
+
+};
+
+window.toggleBan = async (uid, banned) => {
+
+  try {
+
+    await updateDoc(doc(db, "users", uid), {
+      banned
+    });
+
+    alert(banned ? "BANしました" : "BAN解除しました");
+
+    searchMembers();
+
+  } catch (error) {
+
+    alert(error.message);
+
+  }
+
+};
+
+window.makeAdmin = async (uid) => {
+
+  try {
+
+    await updateDoc(doc(db, "users", uid), {
+      role: "admin"
+    });
+
+    alert("管理者に変更しました");
+
+    searchMembers();
+
+  } catch (error) {
+
+    alert(error.message);
+
+  }
+
+};
