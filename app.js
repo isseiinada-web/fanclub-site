@@ -318,6 +318,92 @@ function startNoticeListener() {
   });
 }
 
+function renderNotices(docs) {
+  const noticeList = $("noticeList");
+  const noticeCount = $("noticeCount");
+
+  if (!noticeList || !noticeCount) return;
+
+  noticeCount.textContent = `${docs.length}件`;
+
+  if (docs.length === 0) {
+    noticeList.innerHTML = `
+      <article class="notice-card">
+        <span class="notice-label">お知らせなし</span>
+        <h4>まだ投稿がありません</h4>
+      </article>
+    `;
+    return;
+  }
+
+  noticeList.innerHTML = docs.map((notice) => {
+
+    let dateText = "日時不明";
+
+    if (notice.createdAt?.seconds) {
+      const date = new Date(notice.createdAt.seconds * 1000);
+
+      dateText =
+        date.getFullYear() +
+        "/" +
+        String(date.getMonth() + 1).padStart(2, "0") +
+        "/" +
+        String(date.getDate()).padStart(2, "0") +
+        " " +
+        String(date.getHours()).padStart(2, "0") +
+        ":" +
+        String(date.getMinutes()).padStart(2, "0");
+    }
+
+    const deleteButton =
+      auth.currentUser &&
+      auth.currentUser.email === ADMIN_EMAIL
+        ? `
+          <button
+            class="delete-notice-btn"
+            onclick="deleteNotice('${notice.id}')"
+          >
+            削除
+          </button>
+        `
+        : "";
+
+    return `
+      <article class="notice-card">
+
+        <div class="notice-top">
+          <span class="notice-label">お知らせ</span>
+          <span class="notice-date">${dateText}</span>
+        </div>
+
+        <h4>${escapeHtml(notice.title || "")}</h4>
+
+        <p>${escapeHtml(notice.body || "")}</p>
+
+        ${deleteButton}
+
+      </article>
+    `;
+  }).join("");
+}
+
+window.deleteNotice = async (id) => {
+
+  const ok = confirm("このお知らせを削除しますか？");
+
+  if (!ok) return;
+
+  try {
+
+    await deleteDoc(doc(db, "notices", id));
+
+  } catch (error) {
+
+    alert(error.message);
+
+  }
+};
+
 function updateAdminUI(user) {
   const adminNoticeBox = $("adminNoticeBox");
   if (!adminNoticeBox) return;
@@ -619,4 +705,15 @@ window.makeAdmin = async (uid) => {
 
   }
 
+};
+window.deleteNotice = async (id) => {
+  const ok = confirm("このお知らせを削除しますか？");
+
+  if (!ok) return;
+
+  try {
+    await deleteDoc(doc(db, "notices", id));
+  } catch (error) {
+    alert(error.message);
+  }
 };
