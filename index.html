@@ -223,7 +223,31 @@
             <button class="save-btn" type="button" onclick="postNotice()">お知らせを投稿する</button>
             <p id="noticePostMessage" class="save-message"></p>
           </div>
+          <div id="adminMemberPanel" class="settings-card admin-card hidden">
 
+  <h3>管理者用：会員管理</h3>
+  <p class="muted">会員情報の確認・BAN・権限変更ができます。</p>
+
+  <div class="admin-stats">
+    <div>総会員数：<span id="totalMembers">0</span></div>
+    <div>BAN人数：<span id="bannedMembers">0</span></div>
+  </div>
+
+  <input
+    id="memberSearchInput"
+    class="settings-input"
+    type="text"
+    placeholder="メール・UID・名前で検索"
+  />
+
+  <button class="save-btn" type="button" onclick="searchMembers()">
+    会員検索
+  </button>
+
+  <div id="memberList" class="member-list"></div>
+
+</div>
+          
           <div class="settings-card notice-panel">
             <div class="notice-head">
               <div>
