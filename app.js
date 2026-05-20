@@ -296,7 +296,7 @@ function renderNotices(docs) {
     <small>${dateText || ""}</small>
 
     ${
-      auth.currentUser?.email === ADMIN_EMAIL
+      auth.currentUser && auth.currentUser.email === ADMIN_EMAIL
         ? `
       <button
         class="delete-btn"
