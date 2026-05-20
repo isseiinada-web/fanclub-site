@@ -296,18 +296,18 @@ noticeList.innerHTML = docs.map((notice, index) => {
       <small>${dateText || ""}</small>
 
       ${
-  auth.currentUser &&
-  auth.currentUser.email === ADMIN_EMAIL
-    ? `
-      <button
-        class="delete-btn"
-        onclick='deleteNotice("${notice.id}")'
-      >
-        削除
-      </button>
-    `
-    : ""
-}
+        auth.currentUser &&
+        auth.currentUser.email === ADMIN_EMAIL
+          ? `
+        <button
+          class="delete-btn"
+          onclick='deleteNotice("${notice.id}")'
+        >
+          削除
+        </button>
+      `
+          : ""
+      }
     </article>
   `;
 }).join("");
