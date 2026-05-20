@@ -29,6 +29,8 @@ import {
   orderBy,
   onSnapshot,
   serverTimestamp
+  deleteDoc,
+　getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -283,16 +285,31 @@ function renderNotices(docs) {
     const importantClass = index === 0 ? " important" : "";
     const dateText = formatDateFromTimestamp(notice.createdAt);
 
-    return `
-      <article class="notice-card${importantClass}">
-        <span class="notice-label">${label}</span>
-        <h4>${escapeHtml(notice.title || "無題のお知らせ")}</h4>
-        <p>${escapeHtml(notice.body || "")}</p>
-        <small>${dateText || ""}</small>
-      </article>
-    `;
-  }).join("");
-}
+   return `
+  <article class="notice-card${importantClass}">
+    <span class="notice-label">${label}</span>
+
+    <h4>${escapeHtml(notice.title || "無題のお知らせ")}</h4>
+
+    <p>${escapeHtml(notice.body || "")}</p>
+
+    <small>${dateText || ""}</small>
+
+    ${
+      auth.currentUser?.email === ADMIN_EMAIL
+        ? `
+      <button
+        class="delete-btn"
+        onclick="deleteNotice('${notice.id}')"
+      >
+        削除
+      </button>
+    `
+        : ""
+    }
+
+  </article>
+`;
 
 function escapeHtml(str) {
   return String(str)
