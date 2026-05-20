@@ -712,3 +712,54 @@ button{
     grid-template-columns:1fr;
   }
 }
+.admin-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.admin-stats div {
+  background: rgba(255,255,255,0.05);
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-weight: bold;
+}
+
+.member-list {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.member-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.member-card p {
+  margin-bottom: 8px;
+}
+
+.member-card button {
+  margin-right: 10px;
+  margin-top: 10px;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.member-card button:first-of-type {
+  background: #ff4d6d;
+  color: white;
+}
+
+.member-card button:last-of-type {
+  background: #5865f2;
+  color: white;
+}
