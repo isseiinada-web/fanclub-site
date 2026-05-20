@@ -46,6 +46,8 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 const db = getFirestore(app);
 
+const ADMIN_EMAIL = "isseiren11220425@gmail.com";
+
 const $ = (id) => document.getElementById(id);
 
 const loginPage = $("loginPage");
