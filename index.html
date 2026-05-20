@@ -209,62 +209,106 @@
         </section>
 
         <!-- NEWS -->
-        <section id="panel-news" class="screen-panel">
-          <div id="adminNoticeBox" class="settings-card admin-card hidden">
-            <h3>管理者用：お知らせ投稿</h3>
-            <p class="muted">この投稿は全ユーザーのお知らせ欄に表示されます。</p>
+<section id="panel-news" class="screen-panel">
 
-            <label for="noticeTitleInput">タイトル</label>
-            <input id="noticeTitleInput" class="settings-input" type="text" placeholder="お知らせタイトル" />
+  <div id="adminNoticeBox" class="settings-card admin-card hidden">
+    <h3>管理者用：お知らせ投稿</h3>
+    <p class="muted">この投稿は全ユーザーのお知らせ欄に表示されます。</p>
 
-            <label for="noticeBodyInput">本文</label>
-            <textarea id="noticeBodyInput" class="settings-textarea" placeholder="お知らせ本文"></textarea>
+    <label for="noticeTitleInput">タイトル</label>
+    <input
+      id="noticeTitleInput"
+      class="settings-input"
+      type="text"
+      placeholder="お知らせタイトル"
+    />
 
-            <button class="save-btn" type="button" onclick="postNotice()">お知らせを投稿する</button>
-            <p id="noticePostMessage" class="save-message"></p>
-          </div>
-          <div id="adminMemberPanel" class="settings-card admin-card hidden">
+    <label for="noticeBodyInput">本文</label>
+    <textarea
+      id="noticeBodyInput"
+      class="settings-textarea"
+      placeholder="お知らせ本文"
+    ></textarea>
 
-  <h3>管理者用：会員管理</h3>
-  <p class="muted">会員情報の確認・BAN・権限変更ができます。</p>
+    <button
+      class="save-btn"
+      type="button"
+      onclick="postNotice()"
+    >
+      お知らせを投稿する
+    </button>
 
-  <div class="admin-stats">
-    <div>総会員数：<span id="totalMembers">0</span></div>
-    <div>BAN人数：<span id="bannedMembers">0</span></div>
+    <p id="noticePostMessage" class="save-message"></p>
   </div>
 
-  <input
-    id="memberSearchInput"
-    class="settings-input"
-    type="text"
-    placeholder="メール・UID・名前で検索"
-  />
+  <div id="adminMemberPanel" class="settings-card admin-card hidden">
 
-  <button class="save-btn" type="button" onclick="searchMembers()">
-    会員検索
-  </button>
+    <h3>管理者用：会員管理</h3>
+    <p class="muted">
+      会員情報の確認・BAN・権限変更ができます。
+    </p>
 
-  <div id="memberList" class="member-list"></div>
-</div>
-</div>          
-          <div class="settings-card notice-panel">
-            <div class="notice-head">
-              <div>
-                <h3>お知らせ</h3>
-                <p class="muted">FAN CLUBからの最新情報です。</p>
-              </div>
-              <span id="noticeCount" class="notice-count">0件</span>
-            </div>
+    <div class="admin-stats">
+      <div>
+        総会員数：
+        <span id="totalMembers">0</span>
+      </div>
 
-            <div id="noticeList" class="notice-list">
-              <article class="notice-card">
-                <span class="notice-label">読み込み中</span>
-                <h4>お知らせを取得しています</h4>
-                <p>少しお待ちください。</p>
-              </article>
-            </div>
-          </div>
-        </section>
+      <div>
+        BAN人数：
+        <span id="bannedMembers">0</span>
+      </div>
+    </div>
+
+    <input
+      id="memberSearchInput"
+      class="settings-input"
+      type="text"
+      placeholder="メール・UID・名前で検索"
+    />
+
+    <button
+      class="save-btn"
+      type="button"
+      onclick="searchMembers()"
+    >
+      会員検索
+    </button>
+
+    <div id="memberList" class="member-list"></div>
+  </div>
+
+  <div class="settings-card notice-panel">
+
+    <div class="notice-head">
+      <div>
+        <h3>お知らせ</h3>
+        <p class="muted">
+          FAN CLUBからの最新情報です。
+        </p>
+      </div>
+
+      <span id="noticeCount" class="notice-count">
+        0件
+      </span>
+    </div>
+
+    <div id="noticeList" class="notice-list">
+
+      <article class="notice-card">
+        <span class="notice-label">
+          読み込み中
+        </span>
+
+        <h4>お知らせを取得しています</h4>
+
+        <p>少しお待ちください。</p>
+      </article>
+
+    </div>
+
+
+</section>
 
         <!-- SNS -->
         <section id="panel-sns" class="screen-panel">
