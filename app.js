@@ -485,7 +485,7 @@ window.postNotice = async () => {
     }
 
     const titleInput = $("noticeTitleInput");
-    const bodyInput = $("noticeBodyInput");
+    const bodyInput = $("noticeBody");
 
     const title = titleInput.value.trim();
     const body = bodyInput.value.trim();
