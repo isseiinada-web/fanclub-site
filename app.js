@@ -486,18 +486,32 @@ window.postNotice = async () => {
     const title = titleInput.value.trim();
     const body = bodyInput.value.trim();
 
-    if (!title || !body) {
-      alert("タイトルと本文を入力してください");
-      return;
-    }
+if (!title || !body) {
+  alert("タイトルと本文を入力してください");
+  return;
+}
 
-    await addDoc(collection(db, "notices"), {
-      title: title,
-      body: body,
-      createdAt: new Date(),
-      createdBy: user.email
-    });
+let imageUrl = "";
 
+const imageFile = $("noticeImage")?.files?.[0];
+
+if (imageFile) {
+  const imageRef = ref(
+    storage,
+    `notice-images/${Date.now()}-${imageFile.name}`
+  );
+
+  await uploadBytes(imageRef, imageFile);
+
+  imageUrl = await getDownloadURL(imageRef);
+}
+
+await addDoc(collection(db, "notices"), {
+  title,
+  body,
+  imageUrl,
+  createdAt: serverTimestamp()
+});
     titleInput.value = "";
     bodyInput.value = "";
 
