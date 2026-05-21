@@ -292,12 +292,11 @@ noticeList.innerHTML = docs.map((notice, index) => {
       <h4>${escapeHtml(notice.title || "無題のお知らせ")}</h4>
 
       <p>${escapeHtml(notice.body || "")}</p>
-      ${
+${
   notice.imageUrl
-    ? `<img src="${notice.imageUrl}" class="notice-image">
+    ? `<img src="${notice.imageUrl}" class="notice-image">`
     : ""
 }
-
       <small>${dateText || ""}</small>
 
       ${
