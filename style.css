@@ -783,3 +783,9 @@ button{
   font-size: 12px;
   font-weight: bold;
 }
+.notice-image {
+  width: 100%;
+  border-radius: 16px;
+  margin-top: 12px;
+  object-fit: cover;
+}
